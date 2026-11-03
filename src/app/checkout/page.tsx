@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatVND } from "@/lib/prisma";
@@ -13,7 +13,22 @@ import {
   Trash2,
   ArrowLeft,
   ShieldCheck,
+  TicketPercent,
+  Sparkles,
+  X,
+  Flame,
 } from "lucide-react";
+
+interface CouponItem {
+  id: string;
+  code: string;
+  discountPercent: number;
+  description?: string | null;
+  minOrderAmount: number;
+  maxDiscount?: number | null;
+  expiresAt: string;
+  isActive: boolean;
+}
 
 export default function CheckoutPage() {
   const { items, updateQuantity, removeFromCart, clearCart, totalAmount } =
@@ -26,14 +41,117 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "BANK_TRANSFER">(
     "COD"
   );
+
+  // Coupon / Voucher states
+  const [couponInput, setCouponInput] = useState("");
+  const [availableCoupons, setAvailableCoupons] = useState<CouponItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponItem | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccessMsg, setCouponSuccessMsg] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [orderSuccess, setOrderSuccess] = useState<{
     id: string;
     customerName: string;
+    couponCode?: string | null;
+    discountAmount?: number;
     totalAmount: number;
     paymentMethod: string;
   } | null>(null);
+
+  // Load active coupons from Database & check if user saved a Flash Sale code
+  useEffect(() => {
+    fetch("/api/coupons")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const now = new Date();
+          const activeValid = data.filter(
+            (c: CouponItem) => c.isActive && new Date(c.expiresAt) > now
+          );
+          setAvailableCoupons(activeValid);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch coupons:", err));
+
+    try {
+      const savedCode = localStorage.getItem("lumina_saved_voucher");
+      if (savedCode) {
+        setCouponInput(savedCode);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  // Re-calculate discount dynamically when cart totalAmount or appliedCoupon changes
+  const calculatedDiscount = React.useMemo(() => {
+    if (!appliedCoupon) return 0;
+    if (totalAmount < appliedCoupon.minOrderAmount) return 0;
+    let disc = Math.round((totalAmount * appliedCoupon.discountPercent) / 100);
+    if (appliedCoupon.maxDiscount && disc > appliedCoupon.maxDiscount) {
+      disc = appliedCoupon.maxDiscount;
+    }
+    return disc;
+  }, [appliedCoupon, totalAmount]);
+
+  const finalTotalAmount = Math.max(0, totalAmount - calculatedDiscount);
+
+  const handleApplyCoupon = async (codeToApply?: string) => {
+    const targetCode = (codeToApply ?? couponInput).trim().toUpperCase();
+    if (!targetCode) {
+      setCouponError("Vui lòng nhập mã giảm giá.");
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponSuccessMsg("");
+
+    try {
+      const res = await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "validate",
+          code: targetCode,
+          subtotal: totalAmount,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setAppliedCoupon(null);
+        setCouponError(data.error || "Mã giảm giá không hợp lệ.");
+      } else {
+        setCouponInput(data.coupon.code);
+        setAppliedCoupon(data.coupon);
+        setCouponSuccessMsg(
+          `Áp dụng mã ${data.coupon.code} (-${
+            data.coupon.discountPercent
+          }%) thành công! Bạn tiết kiệm được ${formatVND(data.discountAmount)}.`
+        );
+      }
+    } catch {
+      setCouponError("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError("");
+    setCouponSuccessMsg("");
+    try {
+      localStorage.removeItem("lumina_saved_voucher");
+    } catch {
+      // ignore
+    }
+  };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +170,8 @@ export default function CheckoutPage() {
           address,
           note,
           paymentMethod,
+          couponCode:
+            appliedCoupon && calculatedDiscount > 0 ? appliedCoupon.code : null,
           items: items.map((i) => ({
             productId: i.id,
             quantity: i.quantity,
@@ -66,6 +186,11 @@ export default function CheckoutPage() {
       } else {
         setOrderSuccess(data);
         clearCart();
+        try {
+          localStorage.removeItem("lumina_saved_voucher");
+        } catch {
+          // ignore
+        }
       }
     } catch {
       setErrorMsg("Không thể kết nối máy chủ. Vui lòng thử lại.");
@@ -107,6 +232,14 @@ export default function CheckoutPage() {
                   : "Chuyển khoản ngân hàng"}
               </span>
             </div>
+            {orderSuccess.couponCode && (
+              <div className="flex justify-between text-emerald-700">
+                <span>Mã giảm giá đã áp dụng ({orderSuccess.couponCode}):</span>
+                <span className="font-bold">
+                  -{formatVND(orderSuccess.discountAmount || 0)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-rose-100 pt-2">
               <span className="text-stone-500">Tổng thanh toán:</span>
               <span className="font-bold text-rose-600 text-base">
@@ -289,18 +422,18 @@ export default function CheckoutPage() {
             >
               {loading
                 ? "Đang xử lý đơn hàng..."
-                : `Hoàn Tất Đặt Hàng (${formatVND(totalAmount)})`}
+                : `Hoàn Tất Đặt Hàng (${formatVND(finalTotalAmount)})`}
             </button>
           </form>
 
-          {/* Order Summary */}
+          {/* Order Summary & Voucher Section */}
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-rose-100 shadow-xs space-y-6">
               <h2 className="font-serif text-xl font-bold text-stone-800 pb-3 border-b border-rose-100">
                 Chi Tiết Giỏ Hàng ({items.length})
               </h2>
 
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+              <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
                 {items.map((item) => (
                   <div
                     key={item.id}
@@ -356,20 +489,134 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              <div className="space-y-2 text-sm pt-2">
+              {/* VOUCHER / COUPON INPUT BOX */}
+              <div className="bg-gradient-to-br from-rose-50/80 to-[#FDFBF7] p-4 rounded-2xl border border-rose-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-rose-600">
+                    <TicketPercent className="w-4 h-4" />
+                    <span>Mã Giảm Giá / Voucher Flash Sale</span>
+                  </label>
+                  {appliedCoupon && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs text-stone-500 hover:text-red-600 inline-flex items-center gap-1 font-medium"
+                    >
+                      <X className="w-3.5 h-3.5" /> Gỡ mã
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) =>
+                      setCouponInput(e.target.value.toUpperCase())
+                    }
+                    placeholder="Nhập mã (VD: LUMINA20, FLASHSALE30)"
+                    data-testid="coupon-input"
+                    className="flex-1 px-3.5 py-2.5 text-sm font-mono font-bold uppercase rounded-xl border border-rose-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCoupon()}
+                    disabled={couponLoading}
+                    data-testid="apply-coupon-btn"
+                    className="bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition flex-shrink-0 shadow-xs"
+                  >
+                    {couponLoading ? "Đang kiểm tra..." : "Áp dụng"}
+                  </button>
+                </div>
+
+                {couponError && (
+                  <p className="text-xs text-red-600 font-medium bg-red-50 px-3 py-2 rounded-xl border border-red-200">
+                    {couponError}
+                  </p>
+                )}
+
+                {couponSuccessMsg && appliedCoupon && (
+                  <div className="text-xs text-emerald-700 font-medium bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                    <span>{couponSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* Quick Pick Available Vouchers from DB */}
+                {availableCoupons.length > 0 && (
+                  <div className="pt-1 space-y-1.5">
+                    <p className="text-[11px] font-semibold text-stone-500 flex items-center gap-1">
+                      <Flame className="w-3.5 h-3.5 text-rose-500" /> Chọn nhanh
+                      Voucher đang có sẵn:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableCoupons.map((c) => {
+                        const isSelected = appliedCoupon?.code === c.code;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setCouponInput(c.code);
+                              handleApplyCoupon(c.code);
+                            }}
+                            className={`text-left px-2.5 py-1.5 rounded-xl border text-[11px] transition flex items-center gap-1.5 ${
+                              isSelected
+                                ? "bg-rose-500 text-white border-rose-500 font-bold"
+                                : "bg-white hover:bg-rose-50 text-stone-700 border-rose-200"
+                            }`}
+                            title={c.description || ""}
+                          >
+                            <span className="font-mono font-bold">
+                              {c.code}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                isSelected
+                                  ? "bg-white/20 text-white"
+                                  : "bg-rose-100 text-rose-600"
+                              }`}
+                            >
+                              -{c.discountPercent}%
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Price Summary Breakdown */}
+              <div className="space-y-2.5 text-sm pt-2">
                 <div className="flex justify-between text-stone-500">
                   <span>Tạm tính</span>
                   <span>{formatVND(totalAmount)}</span>
                 </div>
+
+                {appliedCoupon && calculatedDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Voucher ({appliedCoupon.code} -{appliedCoupon.discountPercent}
+                      %)
+                    </span>
+                    <span>-{formatVND(calculatedDiscount)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-stone-500">
                   <span>Phí vận chuyển</span>
                   <span className="text-emerald-600 font-semibold">
                     Miễn phí
                   </span>
                 </div>
+
                 <div className="flex justify-between text-lg font-bold text-stone-800 pt-3 border-t border-rose-100">
                   <span>Tổng thanh toán</span>
-                  <span className="text-rose-600">{formatVND(totalAmount)}</span>
+                  <span className="text-rose-600">
+                    {formatVND(finalTotalAmount)}
+                  </span>
                 </div>
               </div>
 

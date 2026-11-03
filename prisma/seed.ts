@@ -8,6 +8,7 @@ async function main() {
   // Xóa dữ liệu cũ theo thứ tự khóa ngoại
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.coupon.deleteMany();
   await prisma.review.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
@@ -152,7 +153,7 @@ async function main() {
         "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=80",
       ],
       description:
-        "Serum cấp nước chuyên sâu với phân tử Hyaluronic Acid đa kích thước kết hợp Про-Vitamin B5 giúp phục hồi màng bảo vệ da, làm dịu tình trạng khô căng bong tróc và mang lại làn da căng bóng ngậm nước.",
+        "Serum cấp nước chuyên sâu với phân tử Hyaluronic Acid đa kích thước kết hợp Pro-Vitamin B5 giúp phục hồi màng bảo vệ da, làm dịu tình trạng khô căng bong tróc và mang lại làn da căng bóng ngậm nước.",
       ingredients:
         "Aqua (Water), Sodium Hyaluronate, Sodium Hyaluronate Crosspolymer, Panthenol (Vitamin B5), Ahnfeltia Concinna Extract, Glycerin, Pentylene Glycol, Propanediol.",
       skinType: "Da khô",
@@ -328,7 +329,6 @@ async function main() {
       data: item,
     });
 
-    // Tạo đánh giá mẫu cho sản phẩm
     await prisma.review.createMany({
       data: [
         {
@@ -347,7 +347,58 @@ async function main() {
     });
   }
 
-  console.log("✅ Đã khởi tạo thành công: 4 Danh mục, 4 Thương hiệu, 12 Sản phẩm và 24 Đánh giá!");
+  // 4. Tạo 5 Mã giảm giá (Coupons) cho tính năng Voucher & Flash Sale
+  await prisma.coupon.createMany({
+    data: [
+      {
+        code: "LUMINA20",
+        discountPercent: 20,
+        description: "Giảm 20% mừng đại tiệc Flash Sale Lumina Beauty (Áp dụng mọi đơn hàng)",
+        minOrderAmount: 0,
+        maxDiscount: 500000,
+        expiresAt: new Date("2027-12-31T23:59:59.000Z"),
+        isActive: true,
+      },
+      {
+        code: "SKINCARE15",
+        discountPercent: 15,
+        description: "Giảm 15% cho đơn hàng chăm sóc da từ 300.000₫",
+        minOrderAmount: 300000,
+        maxDiscount: 350000,
+        expiresAt: new Date("2027-12-31T23:59:59.000Z"),
+        isActive: true,
+      },
+      {
+        code: "FLASHSALE30",
+        discountPercent: 30,
+        description: "Siêu Voucher Flash Sale giảm 30% cho đơn hàng từ 1.000.000₫",
+        minOrderAmount: 1000000,
+        maxDiscount: 700000,
+        expiresAt: new Date("2027-12-31T23:59:59.000Z"),
+        isActive: true,
+      },
+      {
+        code: "NEWMEMBER10",
+        discountPercent: 10,
+        description: "Ưu đãi 10% dành tặng khách hàng mới",
+        minOrderAmount: 0,
+        maxDiscount: 250000,
+        expiresAt: new Date("2027-12-31T23:59:59.000Z"),
+        isActive: true,
+      },
+      {
+        code: "EXPIRED50",
+        discountPercent: 50,
+        description: "Mã giảm giá sự kiện cũ (Đã hết hạn sử dụng)",
+        minOrderAmount: 0,
+        maxDiscount: 500000,
+        expiresAt: new Date("2025-01-01T00:00:00.000Z"),
+        isActive: true,
+      },
+    ],
+  });
+
+  console.log("✅ Đã khởi tạo thành công: 4 Danh mục, 4 Thương hiệu, 12 Sản phẩm, 24 Đánh giá và 5 Mã giảm giá (Coupons)!");
 }
 
 main()
