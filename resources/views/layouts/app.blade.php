@@ -1,25 +1,30 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Lumina Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng')</title>
+    <title>@yield('title', __('Lumina Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Roboto', 'sans-serif'],
+                        serif: ['Roboto', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    <style>
+        body, h1, h2, h3, h4, h5, h6, input, button, select, textarea {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col bg-[#FDFBF7] text-stone-800">
     @php
@@ -30,7 +35,7 @@
 
     <!-- Top Announcement Bar -->
     <div class="bg-gradient-to-r from-rose-200/80 via-rose-100 to-rose-200/80 text-rose-900 text-xs py-2 px-4 text-center font-medium tracking-wide">
-        ✨ Lumina Beauty Laravel 11 Edition — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨
+        {{ __('✨ Lumina Beauty Laravel 11 Edition — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
     </div>
 
     <!-- Header Navigation -->
@@ -54,30 +59,41 @@
 
                 <!-- Desktop Nav -->
                 <nav class="hidden md:flex items-center gap-5 text-sm font-medium">
-                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Trang chủ</a>
-                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Sản phẩm</a>
-                    <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Chăm sóc da</a>
-                    <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Tra cứu SĐT</a>
+                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Trang chủ') }}</a>
+                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Sản phẩm') }}</a>
+                    <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Chăm sóc da') }}</a>
+                    <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Tra cứu SĐT') }}</a>
 
                     @if(auth()->check() && !auth()->user()->is_admin)
                         <a href="{{ route('customer.account') }}" class="text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-full transition shadow-xs">
-                            👤 {{ auth()->user()->username ?? auth()->user()->name }} (Đơn & Voucher)
+                            👤 {{ auth()->user()->username ?? auth()->user()->name }} ({{ __('Đơn & Voucher') }})
                         </a>
                     @else
                         <a href="{{ route('customer.login') }}" class="text-xs font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 px-3.5 py-2 rounded-full transition border border-rose-200">
-                            👤 Đăng nhập Khách hàng
+                            👤 {{ __('Đăng nhập Khách hàng') }}
                         </a>
                     @endif
-
-                    <a href="{{ route('admin.index') }}" class="text-xs font-bold bg-stone-900 hover:bg-rose-600 text-white px-3.5 py-2 rounded-full transition">
-                        🔐 Quản trị Shop
-                    </a>
                 </nav>
 
-                <!-- Cart Button -->
-                <div class="flex items-center gap-3">
+                <!-- Language Switcher & Cart Button -->
+                <div class="flex items-center gap-2.5">
+                    <div class="inline-flex items-center rounded-full bg-white border border-rose-200 p-0.5 shadow-2xs text-xs font-bold">
+                        <a href="{{ route('lang.switch', 'vi') }}"
+                           title="Tiếng Việt (Mặc định)"
+                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1 {{ app()->getLocale() === 'vi' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
+                            <span>🇻🇳</span>
+                            <span>VI</span>
+                        </a>
+                        <a href="{{ route('lang.switch', 'en') }}"
+                           title="Switch to English"
+                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1 {{ app()->getLocale() === 'en' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
+                            <span>🇬🇧</span>
+                            <span>EN</span>
+                        </a>
+                    </div>
+
                     <button type="button" onclick="document.getElementById('cart-drawer').classList.remove('hidden')" class="relative flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2.5 rounded-full font-medium text-sm transition shadow-sm border border-rose-200/60">
-                        <span>🛍️ Giỏ hàng</span>
+                        <span>🛍️ {{ __('Giỏ hàng') }}</span>
                         <span class="bg-rose-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                             {{ $cartCount }}
                         </span>
@@ -204,5 +220,7 @@
             © 2026 Lumina Beauty — Powered by PHP Laravel 11, Eloquent ORM & Docker PostgreSQL.
         </div>
     </footer>
+
+    @include('partials.i18n-en')
 </body>
 </html>

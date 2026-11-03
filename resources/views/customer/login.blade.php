@@ -4,19 +4,16 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- Top Portal Switcher Banner -->
+    <!-- Top Customer Portal Banner -->
     <div class="mb-8 bg-white rounded-3xl border border-rose-100 p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
             <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-500 text-white shadow-xs">
-                👤 Trang 1: Cổng Đăng Nhập Khách Hàng (/login)
+                👤 Cổng Đăng Nhập Khách Hàng
             </span>
             <span class="text-xs text-stone-500 hidden sm:inline">
                 Theo dõi đơn hàng, giỏ hàng đã lưu trước đây & kho voucher ưu đãi
             </span>
         </div>
-        <a href="{{ route('admin.login') }}" class="text-xs font-bold text-stone-700 hover:text-rose-600 bg-stone-100 hover:bg-rose-50 px-4 py-2 rounded-full transition border border-stone-200">
-            🔐 Chuyển sang Trang 2: Đăng nhập Quản trị viên Shop (/admin/login) →
-        </a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

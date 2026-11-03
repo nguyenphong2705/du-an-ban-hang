@@ -9,6 +9,14 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
+// Chuyển đổi ngôn ngữ (Mặc định: Tiếng Việt 'vi', Hỗ trợ: Tiếng Anh 'en')
+Route::get('/lang/{locale}', function (string $locale) {
+    if (in_array($locale, ['vi', 'en'], true)) {
+        session(['locale' => $locale]);
+    }
+    return redirect()->back();
+})->name('lang.switch');
+
 // Trang chủ
 Route::get('/', [HomeController::class, 'index'])->name('home');
 

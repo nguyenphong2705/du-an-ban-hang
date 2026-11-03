@@ -7,19 +7,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Roboto', 'sans-serif'],
+                        serif: ['Roboto', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
+    <style>
+        body, h1, h2, h3, h4, h5, h6, input, button, select, textarea {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
 </head>
 <body class="font-sans antialiased bg-stone-100 text-stone-800 min-h-screen flex flex-col">
     <!-- Top Admin Header -->
