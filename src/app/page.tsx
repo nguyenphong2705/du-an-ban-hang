@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/ProductCard";
 import SkinTypeExplorer from "@/components/SkinTypeExplorer";
+import FlashSaleSection from "@/components/FlashSaleSection";
 import { SkinQuizTriggerButton } from "@/components/SkinQuizModal";
 import {
   Sparkles,
@@ -15,7 +16,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, brands, allProducts] = await Promise.all([
+  const now = new Date();
+  const [categories, brands, allProducts, activeCoupons] = await Promise.all([
     prisma.category.findMany(),
     prisma.brand.findMany(),
     prisma.product.findMany({
@@ -25,6 +27,15 @@ export default async function HomePage() {
       },
       orderBy: {
         createdAt: "desc",
+      },
+    }),
+    prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        expiresAt: { gt: now },
+      },
+      orderBy: {
+        discountPercent: "desc",
       },
     }),
   ]);
@@ -112,7 +123,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. DANH MỤC NỔI BẬT */}
+      {/* 2. FLASH SALE & SĂN VOUCHER KHUYẾN MÃI */}
+      <FlashSaleSection coupons={activeCoupons} />
+
+      {/* 3. DANH MỤC NỔI BẬT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
           <div>
@@ -156,7 +170,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. SẢN PHẨM BÁN CHẠY (BEST SELLERS) */}
+      {/* 4. SẢN PHẨM BÁN CHẠY (BEST SELLERS) */}
       <section className="bg-gradient-to-b from-rose-50/60 to-[#FDFBF7] py-16 border-y border-rose-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
@@ -185,7 +199,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 4. BỘ LỌC NHANH THEO LOẠI DA */}
+      {/* 5. BỘ LỌC NHANH THEO LOẠI DA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="text-xs font-bold uppercase tracking-[0.2em] text-rose-500">
@@ -203,7 +217,7 @@ export default async function HomePage() {
         <SkinTypeExplorer products={allProducts} />
       </section>
 
-      {/* 5. THƯƠNG HIỆU ĐỒNG HÀNH */}
+      {/* 6. THƯƠNG HIỆU ĐỒNG HÀNH */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl border border-rose-100 p-8 sm:p-10 shadow-xs">
           <div className="text-center mb-8">

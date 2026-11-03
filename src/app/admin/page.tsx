@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Sparkles,
   RefreshCw,
+  TicketPercent,
 } from "lucide-react";
 
 interface OrderItemData {
@@ -27,6 +28,8 @@ interface OrderData {
   address: string;
   note?: string;
   paymentMethod: string;
+  couponCode?: string | null;
+  discountAmount?: number;
   totalAmount: number;
   status: string;
   createdAt: string;
@@ -58,11 +61,22 @@ interface BrandData {
   origin: string;
 }
 
+interface CouponData {
+  id: string;
+  code: string;
+  discountPercent: number;
+  description?: string | null;
+  minOrderAmount: number;
+  expiresAt: string;
+  isActive: boolean;
+}
+
 export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [products, setProducts] = useState<ProductData[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [brands, setBrands] = useState<BrandData[]>([]);
+  const [coupons, setCoupons] = useState<CouponData[]>([]);
   const [loading, setLoading] = useState(true);
 
   // New Product Form State
@@ -84,17 +98,30 @@ export default function AdminDashboardPage() {
   );
   const [submitting, setSubmitting] = useState(false);
 
+  // New Coupon Form State
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("25");
+  const [minOrderAmount, setMinOrderAmount] = useState("200000");
+  const [expiresAt, setExpiresAt] = useState("2027-12-31");
+  const [couponDesc, setCouponDesc] = useState(
+    "Ưu đãi Flash Sale giảm 25% cho đơn hàng mỹ phẩm"
+  );
+  const [submittingCoupon, setSubmittingCoupon] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [ordersRes, prodRes] = await Promise.all([
+      const [ordersRes, prodRes, couponsRes] = await Promise.all([
         fetch("/api/orders"),
         fetch("/api/products"),
+        fetch("/api/coupons"),
       ]);
       const ordersData = await ordersRes.json();
       const prodData = await prodRes.json();
+      const couponsData = await couponsRes.json();
 
       if (Array.isArray(ordersData)) setOrders(ordersData);
+      if (Array.isArray(couponsData)) setCoupons(couponsData);
       if (prodData.products) {
         setProducts(prodData.products);
         setCategories(prodData.categories || []);
@@ -149,6 +176,32 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleAddCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponCode || !discountPercent || !expiresAt) return;
+    setSubmittingCoupon(true);
+    try {
+      const res = await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode.toUpperCase(),
+          discountPercent: Number(discountPercent),
+          minOrderAmount: Number(minOrderAmount || 0),
+          expiresAt,
+          description: couponDesc,
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setCoupons([created, ...coupons]);
+        setCouponCode("");
+      }
+    } finally {
+      setSubmittingCoupon(false);
+    }
+  };
+
   const handleDeleteProduct = async (id: string) => {
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (res.ok) {
@@ -165,7 +218,7 @@ export default function AdminDashboardPage() {
             <Sparkles className="w-3.5 h-3.5" /> Lumina Beauty Admin Portal
           </span>
           <h1 className="font-serif text-3xl font-bold text-stone-800 mt-1">
-            Quản Trị Đơn Hàng & Sản Phẩm Mỹ Phẩm
+            Quản Trị Đơn Hàng, Voucher & Mỹ Phẩm
           </h1>
           <p className="text-sm text-stone-500 mt-1">
             Đồng bộ trực tiếp với cơ sở dữ liệu Docker PostgreSQL (shop_db)
@@ -209,7 +262,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3.5 px-4">Khách Hàng</th>
                   <th className="py-3.5 px-4">Địa Chỉ Giao Hàng</th>
                   <th className="py-3.5 px-4">Sản Phẩm Đặt</th>
-                  <th className="py-3.5 px-4">Thanh Toán</th>
+                  <th className="py-3.5 px-4">Voucher</th>
                   <th className="py-3.5 px-4">Tổng Tiền</th>
                   <th className="py-3.5 px-4">Trạng Thái</th>
                 </tr>
@@ -239,8 +292,17 @@ export default function AdminDashboardPage() {
                         ))}
                       </ul>
                     </td>
-                    <td className="py-4 px-4 text-xs font-medium text-stone-700">
-                      {order.paymentMethod}
+                    <td className="py-4 px-4 text-xs">
+                      {order.couponCode ? (
+                        <span className="inline-flex flex-col bg-rose-50 text-rose-700 px-2.5 py-1 rounded-lg font-mono font-bold border border-rose-200">
+                          <span>{order.couponCode}</span>
+                          <span className="text-[10px] text-emerald-600">
+                            -{formatVND(order.discountAmount || 0)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-stone-400">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4 font-bold text-rose-600">
                       {formatVND(order.totalAmount)}
@@ -258,7 +320,152 @@ export default function AdminDashboardPage() {
         )}
       </section>
 
-      {/* 2. THÊM & QUẢN LÝ SẢN PHẨM MỸ PHẨM */}
+      {/* 2. QUẢN LÝ MÃ GIẢM GIÁ (COUPON / VOUCHER) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <form
+          onSubmit={handleAddCoupon}
+          className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-rose-100 shadow-xs space-y-4 h-fit"
+        >
+          <div className="flex items-center gap-2 pb-3 border-b border-rose-100">
+            <TicketPercent className="w-5 h-5 text-rose-500" />
+            <h2 className="font-serif text-xl font-bold text-stone-800">
+              Tạo Mã Giảm Giá (Coupon) Mới
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Mã Code *
+              </label>
+              <input
+                type="text"
+                required
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="VD: GLOW25"
+                className="w-full px-3.5 py-2.5 text-sm font-mono uppercase rounded-xl border border-rose-200 bg-[#FDFBF7]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Phần trăm giảm (%) *
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                required
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-rose-200 bg-[#FDFBF7]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Đơn tối thiểu (VNĐ)
+              </label>
+              <input
+                type="number"
+                value={minOrderAmount}
+                onChange={(e) => setMinOrderAmount(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-rose-200 bg-[#FDFBF7]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-stone-600 mb-1">
+                Hạn sử dụng *
+              </label>
+              <input
+                type="date"
+                required
+                value={expiresAt}
+                onChange={(e) => setExpiresAt(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-rose-200 bg-[#FDFBF7]"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-600 mb-1">
+              Mô tả ưu đãi
+            </label>
+            <input
+              type="text"
+              value={couponDesc}
+              onChange={(e) => setCouponDesc(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-rose-200 bg-[#FDFBF7]"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={submittingCoupon}
+            className="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3 px-6 rounded-full shadow-md shadow-rose-200 transition text-sm"
+          >
+            {submittingCoupon
+              ? "Đang lưu..."
+              : "+ Thêm Mã Giảm Giá Vào PostgreSQL"}
+          </button>
+        </form>
+
+        <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-rose-100 shadow-xs space-y-4">
+          <h2 className="font-serif text-xl font-bold text-stone-800 pb-3 border-b border-rose-100">
+            Danh Sách Mã Giảm Giá Trong Database ({coupons.length})
+          </h2>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-rose-100 text-xs uppercase text-stone-400">
+                  <th className="py-3 px-3">Mã Code</th>
+                  <th className="py-3 px-3">Mức Giảm</th>
+                  <th className="py-3 px-3">Đơn Tối Thiểu</th>
+                  <th className="py-3 px-3">Hạn Sử Dụng</th>
+                  <th className="py-3 px-3">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-rose-50">
+                {coupons.map((c) => {
+                  const expired = new Date(c.expiresAt) < new Date();
+                  return (
+                    <tr key={c.id} className="hover:bg-rose-50/30">
+                      <td className="py-3.5 px-3 font-mono font-bold text-rose-600">
+                        {c.code}
+                      </td>
+                      <td className="py-3.5 px-3 font-bold text-stone-800">
+                        -{c.discountPercent}%
+                      </td>
+                      <td className="py-3.5 px-3 text-xs text-stone-600">
+                        {formatVND(c.minOrderAmount)}
+                      </td>
+                      <td className="py-3.5 px-3 text-xs text-stone-600">
+                        {new Date(c.expiresAt).toLocaleDateString("vi-VN")}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        {expired || !c.isActive ? (
+                          <span className="bg-stone-100 text-stone-500 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            Hết hạn
+                          </span>
+                        ) : (
+                          <span className="bg-emerald-50 text-emerald-700 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            Đang hoạt động
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. THÊM & QUẢN LÝ SẢN PHẨM MỸ PHẨM */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Form thêm sản phẩm */}
         <form

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateCouponCode } from "@/lib/coupon";
 
 export async function GET() {
   try {
@@ -34,21 +35,39 @@ export async function POST(req: NextRequest) {
       address,
       note,
       paymentMethod,
+      couponCode,
       items,
     } = body;
 
-    if (!customerName || !phone || !address || !items || items.length === 0) {
+    if (!customerName || !phone || !address || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "Vui lòng điền đầy đủ thông tin giao hàng và giỏ hàng." },
         { status: 400 }
       );
     }
 
-    const totalAmount = items.reduce(
+    const subtotal = items.reduce(
       (sum: number, item: { price: number; quantity: number }) =>
         sum + Number(item.price) * Number(item.quantity),
       0
     );
+
+    let appliedCouponCode: string | null = null;
+    let discountAmount = 0;
+    let totalAmount = subtotal;
+
+    if (couponCode && String(couponCode).trim() !== "") {
+      const validation = await validateCouponCode(String(couponCode), subtotal);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: validation.error },
+          { status: validation.status }
+        );
+      }
+      appliedCouponCode = validation.coupon!.code;
+      discountAmount = validation.discountAmount!;
+      totalAmount = validation.finalTotal!;
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -57,6 +76,8 @@ export async function POST(req: NextRequest) {
         address,
         note: note || "",
         paymentMethod: paymentMethod || "COD",
+        couponCode: appliedCouponCode,
+        discountAmount,
         totalAmount,
         status: "CONFIRMED",
         items: {
