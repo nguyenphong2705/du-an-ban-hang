@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
+import SkinQuizModal from "@/components/SkinQuizModal";
 import Footer from "@/components/Footer";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
         <CartProvider>
           <Navbar />
           <CartDrawer />
+          <SkinQuizModal />
           <main className="flex-1">{children}</main>
           <Footer />
         </CartProvider>

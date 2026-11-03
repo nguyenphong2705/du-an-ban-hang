@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/ProductCard";
 import SkinTypeExplorer from "@/components/SkinTypeExplorer";
+import { SkinQuizTriggerButton } from "@/components/SkinQuizModal";
 import {
   Sparkles,
   ArrowRight,
@@ -64,12 +65,7 @@ export default async function HomePage() {
                   <span>Khám Phá Bộ Sưu Tập</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link
-                  href="/products?category=cham-soc-da"
-                  className="inline-flex items-center gap-2 bg-white hover:bg-rose-50 text-stone-800 font-semibold px-7 py-4 rounded-full border border-rose-200 transition"
-                >
-                  <span>Tư Vấn Chu Trình Skincare</span>
-                </Link>
+                <SkinQuizTriggerButton label="Trắc nghiệm loại da trong 30 giây" />
               </div>
 
               {/* Trust badges */}
