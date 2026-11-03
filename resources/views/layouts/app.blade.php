@@ -35,7 +35,7 @@
 
     <!-- Top Announcement Bar -->
     <div class="bg-gradient-to-r from-rose-200/80 via-rose-100 to-rose-200/80 text-rose-900 text-xs py-2 px-4 text-center font-medium tracking-wide">
-        {{ __('✨ Lumina Beauty Laravel 11 Edition — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
+        {{ __('✨ Lumina Beauty — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
     </div>
 
     <!-- Header Navigation -->
@@ -52,17 +52,17 @@
                             Lumina <span class="text-rose-500 font-normal italic">Beauty</span>
                         </span>
                         <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 -mt-1">
-                            Laravel 11 Luxury Cosmetics
+                            Luxury Cosmetics
                         </p>
                     </div>
                 </a>
 
                 <!-- Desktop Nav -->
                 <nav class="hidden md:flex items-center gap-5 text-sm font-medium">
-                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Trang chủ') }}</a>
-                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Sản phẩm') }}</a>
-                    <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Chăm sóc da') }}</a>
-                    <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Tra cứu SĐT') }}</a>
+                    <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Trang Chủ') }}</a>
+                    <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Sản Phẩm') }}</a>
+                    <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Chăm Sóc Da') }}</a>
+                    <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">{{ __('Tra Cứu Đơn Hàng') }}</a>
 
                     @if(auth()->check() && !auth()->user()->is_admin)
                         <a href="{{ route('customer.account') }}" class="text-xs font-bold bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-full transition shadow-xs">
@@ -70,7 +70,7 @@
                         </a>
                     @else
                         <a href="{{ route('customer.login') }}" class="text-xs font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 px-3.5 py-2 rounded-full transition border border-rose-200">
-                            👤 {{ __('Đăng nhập Khách hàng') }}
+                            👤 {{ __('Đăng Nhập / Đăng Ký') }}
                         </a>
                     @endif
                 </nav>
@@ -80,14 +80,23 @@
                     <div class="inline-flex items-center rounded-full bg-white border border-rose-200 p-0.5 shadow-2xs text-xs font-bold">
                         <a href="{{ route('lang.switch', 'vi') }}"
                            title="Tiếng Việt (Mặc định)"
-                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1 {{ app()->getLocale() === 'vi' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
-                            <span>🇻🇳</span>
+                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1.5 {{ app()->getLocale() === 'vi' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
+                            <svg class="w-4 h-3 rounded-[2px] shadow-2xs flex-shrink-0" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="30" height="20" fill="#DA251D"/>
+                                <polygon points="15,4 16.47,8.52 21.22,8.52 17.38,11.31 18.85,15.83 15,13.04 11.15,15.83 12.62,11.31 8.78,8.52 13.53,8.52" fill="#FFFF00"/>
+                            </svg>
                             <span>VI</span>
                         </a>
                         <a href="{{ route('lang.switch', 'en') }}"
-                           title="Switch to English"
-                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1 {{ app()->getLocale() === 'en' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
-                            <span>🇬🇧</span>
+                           title="Switch to English (Global)"
+                           class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1.5 {{ app()->getLocale() === 'en' ? 'bg-rose-500 text-white shadow-2xs' : 'text-stone-600 hover:text-rose-600' }}">
+                            <svg class="w-4 h-3 rounded-[2px] shadow-2xs flex-shrink-0" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="30" height="20" fill="#0284C7"/>
+                                <circle cx="15" cy="10" r="6.5" fill="none" stroke="#FFFFFF" stroke-width="1.3"/>
+                                <ellipse cx="15" cy="10" rx="3.2" ry="6.5" fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+                                <line x1="8.5" y1="10" x2="21.5" y2="10" stroke="#FFFFFF" stroke-width="1.2"/>
+                                <path d="M9.5,6.8 Q15,8 20.5,6.8 M9.5,13.2 Q15,12 20.5,13.2" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+                            </svg>
                             <span>EN</span>
                         </a>
                     </div>

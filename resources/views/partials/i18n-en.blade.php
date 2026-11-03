@@ -4,10 +4,16 @@
     const exactMap = {
         // Navigation & Header
         'Trang chủ': 'Home',
+        'Trang Chủ': 'Home',
         'Sản phẩm': 'Products',
+        'Sản Phẩm': 'Products',
         'Chăm sóc da': 'Skincare',
-        'Tra cứu SĐT': 'Order Lookup',
-        '👤 Đăng nhập Khách hàng': '👤 Customer Login',
+        'Chăm Sóc Da': 'Skincare',
+        'Tra cứu SĐT': 'Track Order',
+        'Tra Cứu Đơn Hàng': 'Track Order',
+        '👤 Đăng nhập Khách hàng': '👤 Login / Register',
+        '👤 Đăng Nhập / Đăng Ký': '👤 Login / Register',
+        'Đăng Nhập / Đăng Ký': 'Login / Register',
         '🛍️ Giỏ hàng': '🛍️ Cart',
         'Giỏ Hàng Mỹ Phẩm': 'Cosmetics Cart',
         'Xóa': 'Remove',
@@ -18,7 +24,7 @@
         'Xem giỏ hàng & Thanh toán →': 'View Cart & Checkout →',
 
         // Home Page
-        '✦ BỘ SƯU TẬP DƯỠNG DA 2026 — GLOW & RADIANCE (LARAVEL 11)': '✦ 2026 SKINCARE COLLECTION — GLOW & RADIANCE (LARAVEL 11)',
+        '✦ BỘ SƯU TẬP DƯỠNG DA 2026 — GLOW & RADIANCE': '✦ 2026 SKINCARE COLLECTION — GLOW & RADIANCE',
         'Thuần Khiết & Rạng Ngời': 'Pure & Radiant Glow',
         'Khám phá quy trình chăm sóc da chuẩn khoa học với Niacinamide 10%, BHA 2%, Retinol 0.5% tinh khiết và Hyaluronic Acid đa tầng từ những thương hiệu danh tiếng hàng đầu Pháp, Hàn Quốc và Nhật Bản.': 'Discover a science-backed skincare routine featuring pure 10% Niacinamide, 2% BHA, 0.5% Retinol, and multi-molecular Hyaluronic Acid from world-leading French, Korean, and Japanese brands.',
         'Khám Phá Bộ Sưu Tập →': 'Explore Collection →',

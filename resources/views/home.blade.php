@@ -11,7 +11,7 @@
                 <!-- Left Column -->
                 <div class="lg:col-span-7 space-y-6">
                     <div class="inline-flex items-center gap-2 bg-white/90 border border-rose-200 text-rose-600 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-2xs">
-                        <span>✦ BỘ SƯU TẬP DƯỠNG DA 2026 — GLOW & RADIANCE (LARAVEL 11)</span>
+                        <span>✦ BỘ SƯU TẬP DƯỠNG DA 2026 — GLOW & RADIANCE</span>
                     </div>
 
                     <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-stone-900 leading-[1.15]">
