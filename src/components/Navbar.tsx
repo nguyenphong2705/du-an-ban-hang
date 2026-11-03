@@ -9,10 +9,10 @@ import {
   Search,
   Menu,
   X,
-  ShieldCheck,
-  Heart,
+  WandSparkles,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { openSkinQuiz } from "./SkinQuizModal";
 
 export default function Navbar() {
   const { totalItems, setIsCartOpen } = useCart();
@@ -53,7 +53,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-6">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -73,7 +73,17 @@ export default function Navbar() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={openSkinQuiz}
+              data-testid="navbar-skin-quiz-btn"
+              className="hidden sm:inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-rose-400 hover:from-rose-600 hover:to-rose-500 text-white px-4 py-2 rounded-full font-semibold text-xs transition shadow-sm"
+            >
+              <WandSparkles className="w-3.5 h-3.5" />
+              <span>Trắc nghiệm da 30s</span>
+            </button>
+
             <Link
               href="/products"
               className="p-2.5 rounded-full text-stone-600 hover:text-rose-600 hover:bg-rose-50 transition"
@@ -96,7 +106,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-stone-700 hover:bg-rose-50"
+              className="lg:hidden p-2 rounded-lg text-stone-700 hover:bg-rose-50"
               aria-label="Menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -107,7 +117,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#FDFBF7] border-b border-rose-100 px-4 pt-2 pb-5 space-y-2">
+        <div className="lg:hidden bg-[#FDFBF7] border-b border-rose-100 px-4 pt-2 pb-5 space-y-2">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -118,6 +128,17 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              openSkinQuiz();
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-rose-500 text-white font-semibold text-sm"
+          >
+            <WandSparkles className="w-4 h-4" />
+            <span>AI Trắc nghiệm loại da trong 30 giây</span>
+          </button>
         </div>
       )}
     </header>

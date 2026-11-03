@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard, { ProductCardProps } from "./ProductCard";
-import { Search, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Search, SlidersHorizontal, RotateCcw, WandSparkles } from "lucide-react";
+import { openSkinQuiz } from "./SkinQuizModal";
 
 interface CategoryItem {
   id: string;
@@ -58,6 +59,18 @@ export default function ProductsFilterClient({
     setSelectedBrand(searchParams.get("brand") || "ALL");
     setSelectedSkinType(searchParams.get("skinType") || "Tất cả");
   }, [searchParams]);
+
+  useEffect(() => {
+    const handleQuizCompleted = (e: Event) => {
+      const customEvent = e as CustomEvent<{ skinType: string }>;
+      if (customEvent.detail?.skinType) {
+        setSelectedSkinType(customEvent.detail.skinType);
+      }
+    };
+    window.addEventListener("skin-quiz-completed", handleQuizCompleted);
+    return () =>
+      window.removeEventListener("skin-quiz-completed", handleQuizCompleted);
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return products.filter((item) => {
@@ -145,6 +158,21 @@ export default function ProductsFilterClient({
               className="text-xs text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 font-medium"
             >
               <RotateCcw className="w-3 h-3" /> Đặt lại
+            </button>
+          </div>
+
+          {/* AI Skin Quiz Quick Banner inside Sidebar */}
+          <div className="bg-rose-50/90 border border-rose-200 rounded-2xl p-3.5 space-y-2">
+            <p className="text-xs font-semibold text-stone-700">
+              Chưa biết chọn sản phẩm cho loại da nào?
+            </p>
+            <button
+              type="button"
+              onClick={openSkinQuiz}
+              className="w-full inline-flex items-center justify-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold py-2 px-3 rounded-xl transition shadow-2xs"
+            >
+              <WandSparkles className="w-3.5 h-3.5" />
+              <span>Trắc nghiệm loại da 30s</span>
             </button>
           </div>
 
