@@ -53,13 +53,13 @@
                 </a>
 
                 <!-- Desktop Nav -->
-                <nav class="hidden md:flex items-center gap-7 text-sm font-medium">
+                <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
                     <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Trang chủ</a>
                     <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Tất cả sản phẩm</a>
                     <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Chăm sóc da</a>
                     <a href="{{ route('products.index', ['category' => 'trang-diem']) }}" class="{{ request('category') === 'trang-diem' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Trang điểm</a>
-                    <a href="{{ route('products.index', ['category' => 'nuoc-hoa']) }}" class="{{ request('category') === 'nuoc-hoa' ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Nước hoa</a>
-                    <a href="{{ route('admin.index') }}" class="{{ request()->routeIs('admin.*') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Quản trị (/admin)</a>
+                    <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-rose-600 font-semibold' : 'text-stone-700 hover:text-rose-500' }}">Tra cứu đơn mua</a>
+                    <a href="{{ route('admin.index') }}" class="text-xs font-bold bg-stone-900 hover:bg-rose-600 text-white px-3.5 py-2 rounded-full transition">🔐 Kênh Chủ Shop</a>
                 </nav>
 
                 <!-- Cart Button -->

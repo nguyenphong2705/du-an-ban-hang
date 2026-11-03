@@ -47,8 +47,8 @@
                     <a href="{{ route('products.index') }}" class="bg-rose-500 hover:bg-rose-600 text-white font-semibold px-7 py-3 rounded-full text-sm transition">
                         Tiếp Tục Mua Sắm
                     </a>
-                    <a href="{{ route('admin.index') }}" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold px-7 py-3 rounded-full text-sm transition border border-rose-200">
-                        Xem Đơn Hàng Trong Quản Trị (/admin)
+                    <a href="{{ route('orders.track', ['phone' => $successOrder->phone]) }}" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold px-7 py-3 rounded-full text-sm transition border border-rose-200">
+                        🔍 Tra Cứu Đơn Hàng Đã Mua
                     </a>
                 </div>
             </div>
@@ -160,11 +160,56 @@
                             @endforeach
                         </div>
 
+                        <!-- Mã giảm giá (Voucher) -->
+                        <div class="pt-3 border-t border-rose-100 space-y-2.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-rose-500">
+                                🎟️ Mã Giảm Giá / Voucher
+                            </label>
+                            @if(!empty($appliedCoupon))
+                                <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 rounded-2xl text-xs">
+                                    <span class="font-semibold text-emerald-800">
+                                        Đã áp dụng: <strong class="font-mono">{{ $appliedCoupon['code'] }}</strong> (-{{ $appliedCoupon['discount_percent'] }}%)
+                                    </span>
+                                    <form action="{{ route('checkout.coupon.remove') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-red-500 font-bold hover:underline">Gỡ</button>
+                                    </form>
+                                </div>
+                            @else
+                                <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="flex gap-2">
+                                    @csrf
+                                    <input type="text" name="coupon_code" placeholder="Nhập mã (VD: LUMINA20)" class="flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-2xl border border-rose-200 bg-[#FDFBF7]">
+                                    <button type="submit" class="bg-stone-900 hover:bg-rose-600 text-white text-xs font-semibold px-4 py-2 rounded-2xl transition">
+                                        Áp dụng
+                                    </button>
+                                </form>
+                                @if(!empty($activeCoupons) && $activeCoupons->count() > 0)
+                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                        @foreach($activeCoupons as $cp)
+                                            <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="inline">
+                                                @csrf
+                                                <input type="hidden" name="coupon_code" value="{{ $cp->code }}">
+                                                <button type="submit" class="text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-full font-mono font-semibold">
+                                                    {{ $cp->code }} (-{{ $cp->discount_percent }}%)
+                                                </button>
+                                            </form>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+
                         <div class="space-y-2 text-sm pt-2">
                             <div class="flex justify-between text-stone-500">
                                 <span>Tạm tính</span>
-                                <span>{{ number_format($totalAmount, 0, ',', '.') }}₫</span>
+                                <span>{{ number_format($subtotal ?? $totalAmount, 0, ',', '.') }}₫</span>
                             </div>
+                            @if(!empty($discountAmount) && $discountAmount > 0)
+                                <div class="flex justify-between text-emerald-600 font-semibold">
+                                    <span>Giảm giá Voucher ({{ $appliedCoupon['code'] ?? '' }})</span>
+                                    <span>-{{ number_format($discountAmount, 0, ',', '.') }}₫</span>
+                                </div>
+                            @endif
                             <div class="flex justify-between text-stone-500">
                                 <span>Phí vận chuyển</span>
                                 <span class="text-emerald-600 font-semibold">Miễn phí</span>

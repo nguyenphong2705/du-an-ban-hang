@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -12,14 +13,67 @@ class CheckoutController extends Controller
     public function index(Request $request)
     {
         $cart = session()->get('cart', []);
-        $totalAmount = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+
+        $appliedCoupon = session()->get('applied_coupon');
+        $discountAmount = 0;
+
+        if ($appliedCoupon) {
+            $coupon = Coupon::where('code', $appliedCoupon['code'])
+                ->where('is_active', true)
+                ->first();
+            if ($coupon && !$coupon->isExpired()) {
+                $discountAmount = (int) round($subtotal * ($coupon->discount_percent / 100));
+            } else {
+                session()->forget('applied_coupon');
+                $appliedCoupon = null;
+            }
+        }
+
+        $totalAmount = max(0, $subtotal - $discountAmount);
+        $activeCoupons = Coupon::where('is_active', true)->get();
 
         $successOrder = null;
         if ($orderId = $request->query('success_order_id')) {
             $successOrder = Order::with('items.product')->find($orderId);
         }
 
-        return view('checkout.index', compact('cart', 'totalAmount', 'successOrder'));
+        return view('checkout.index', compact(
+            'cart',
+            'subtotal',
+            'discountAmount',
+            'totalAmount',
+            'appliedCoupon',
+            'activeCoupons',
+            'successOrder'
+        ));
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $code = strtoupper(trim($request->input('coupon_code', '')));
+        if (!$code) {
+            session()->forget('applied_coupon');
+            return back()->with('error', 'Vui lòng nhập mã giảm giá.');
+        }
+
+        $coupon = Coupon::where('code', $code)->first();
+        if (!$coupon || !$coupon->is_active || $coupon->isExpired()) {
+            return back()->with('error', "Mã giảm giá \"{$code}\" không tồn tại hoặc đã hết hạn.");
+        }
+
+        session()->put('applied_coupon', [
+            'code' => $coupon->code,
+            'discount_percent' => $coupon->discount_percent,
+        ]);
+
+        return back()->with('success', "Đã áp dụng mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%)!");
+    }
+
+    public function removeCoupon()
+    {
+        session()->forget('applied_coupon');
+        return back()->with('success', 'Đã gỡ mã giảm giá.');
     }
 
     public function store(Request $request)
@@ -38,17 +92,34 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:COD,BANK_TRANSFER',
         ]);
 
-        $totalAmount = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $appliedCoupon = session()->get('applied_coupon');
+        $couponCode = null;
+        $discountAmount = 0;
 
-        $order = DB::transaction(function () use ($validated, $cart, $totalAmount) {
+        if ($appliedCoupon) {
+            $coupon = Coupon::where('code', $appliedCoupon['code'])
+                ->where('is_active', true)
+                ->first();
+            if ($coupon && !$coupon->isExpired()) {
+                $couponCode = $coupon->code;
+                $discountAmount = (int) round($subtotal * ($coupon->discount_percent / 100));
+            }
+        }
+
+        $totalAmount = max(0, $subtotal - $discountAmount);
+
+        $order = DB::transaction(function () use ($validated, $cart, $totalAmount, $couponCode, $discountAmount) {
             $newOrder = Order::create([
                 'customer_name' => $validated['customer_name'],
                 'phone' => $validated['phone'],
                 'address' => $validated['address'],
                 'note' => $validated['note'] ?? null,
                 'payment_method' => $validated['payment_method'],
+                'coupon_code' => $couponCode,
+                'discount_amount' => $discountAmount,
                 'total_amount' => $totalAmount,
-                'status' => 'CONFIRMED',
+                'status' => 'PENDING',
             ]);
 
             foreach ($cart as $item) {
@@ -63,9 +134,26 @@ class CheckoutController extends Controller
             return $newOrder;
         });
 
-        session()->forget('cart');
+        session()->forget(['cart', 'applied_coupon']);
+        session()->put('last_customer_phone', $validated['phone']);
 
         return redirect()->route('checkout.index', ['success_order_id' => $order->id])
             ->with('success', 'Đặt hàng thành công!');
+    }
+
+    // Trang dành cho Khách hàng tra cứu đơn hàng của mình bằng SĐT (/my-orders)
+    public function trackOrders(Request $request)
+    {
+        $phone = trim($request->query('phone', session('last_customer_phone', '')));
+        $orders = collect();
+
+        if ($phone !== '') {
+            $orders = Order::with('items.product')
+                ->where('phone', 'like', '%' . $phone . '%')
+                ->latest()
+                ->get();
+        }
+
+        return view('checkout.track', compact('phone', 'orders'));
     }
 }

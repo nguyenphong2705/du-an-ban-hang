@@ -4,10 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class CosmeticsSeeder extends Seeder
 {
@@ -15,9 +18,60 @@ class CosmeticsSeeder extends Seeder
     {
         OrderItem::query()->delete();
         Order::query()->delete();
+        Coupon::query()->delete();
         Product::query()->delete();
         Category::query()->delete();
         Brand::query()->delete();
+        User::query()->delete();
+
+        // 0. Tạo tài khoản Admin Chủ Shop (Shop Owner Accounts)
+        User::create([
+            'name' => 'Chủ Shop Lumina Beauty',
+            'email' => 'admin@luminabeauty.vn',
+            'password' => Hash::make('Admin@123456'),
+            'is_admin' => true,
+            'role' => 'admin',
+        ]);
+
+        User::create([
+            'name' => 'Nguyễn Phong (Shop Owner)',
+            'email' => 'phongdev3979@gmail.com',
+            'password' => Hash::make('Admin@123456'),
+            'is_admin' => true,
+            'role' => 'admin',
+        ]);
+
+        // 0.1. Tạo các Mã giảm giá (Coupons / Vouchers)
+        $coupons = [
+            [
+                'code' => 'LUMINA20',
+                'discount_percent' => 20,
+                'expires_at' => now()->addMonths(6),
+                'is_active' => true,
+            ],
+            [
+                'code' => 'FLASHSALE30',
+                'discount_percent' => 30,
+                'expires_at' => now()->addMonths(3),
+                'is_active' => true,
+            ],
+            [
+                'code' => 'SKINCARE15',
+                'discount_percent' => 15,
+                'expires_at' => now()->addMonths(6),
+                'is_active' => true,
+            ],
+            [
+                'code' => 'NEWMEMBER10',
+                'discount_percent' => 10,
+                'expires_at' => now()->addYear(),
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($coupons as $c) {
+            Coupon::create($c);
+        }
 
         // 1. Tạo 4 Danh mục (Categories)
         $catSkincare = Category::create([
@@ -289,8 +343,52 @@ class CosmeticsSeeder extends Seeder
             ],
         ];
 
+        $createdProducts = [];
         foreach ($products as $item) {
-            Product::create($item);
+            $createdProducts[] = Product::create($item);
         }
+
+        // 4. Tạo 2 đơn hàng mẫu để Chủ Shop theo dõi trên Dashboard
+        $order1 = Order::create([
+            'customer_name' => 'Trần Ngọc Lan Khuê',
+            'phone' => '0909123456',
+            'address' => '88 Đồng Khởi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
+            'note' => 'Giao giờ hành chính giúp mình nhé',
+            'payment_method' => 'COD',
+            'coupon_code' => 'LUMINA20',
+            'discount_amount' => 179000,
+            'total_amount' => 716000,
+            'status' => 'COMPLETED',
+        ]);
+        OrderItem::create([
+            'order_id' => $order1->id,
+            'product_id' => $createdProducts[0]->id,
+            'quantity' => 1,
+            'price' => 345000,
+        ]);
+        OrderItem::create([
+            'order_id' => $order1->id,
+            'product_id' => $createdProducts[3]->id,
+            'quantity' => 1,
+            'price' => 550000,
+        ]);
+
+        $order2 = Order::create([
+            'customer_name' => 'Lê Hoàng Bảo Trâm',
+            'phone' => '0918888999',
+            'address' => '254 Cầu Giấy, Quận Cầu Giấy, Hà Nội',
+            'note' => 'Đóng gói hộp quà tặng kèm thiệp',
+            'payment_method' => 'BANK_TRANSFER',
+            'coupon_code' => null,
+            'discount_amount' => 0,
+            'total_amount' => 1150000,
+            'status' => 'PENDING',
+        ]);
+        OrderItem::create([
+            'order_id' => $order2->id,
+            'product_id' => $createdProducts[6]->id,
+            'quantity' => 1,
+            'price' => 1150000,
+        ]);
     }
 }
