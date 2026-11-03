@@ -95,7 +95,8 @@ class AdminController extends Controller
             }
             if ($productSearch !== '') {
                 $kw = mb_strtolower($productSearch);
-                return str_contains(mb_strtolower($product->name), $kw)
+                return str_contains(mb_strtolower($product->sku ?? ''), $kw)
+                    || str_contains(mb_strtolower($product->name), $kw)
                     || str_contains(mb_strtolower($product->brand->name ?? ''), $kw)
                     || str_contains(mb_strtolower($product->skin_type ?? ''), $kw);
             }
@@ -149,6 +150,7 @@ class AdminController extends Controller
         }
 
         $validated = $request->validate([
+            'sku' => 'nullable|string|max:50|unique:products,sku',
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
@@ -163,8 +165,13 @@ class AdminController extends Controller
         ]);
 
         $slug = Str::slug($validated['name']) . '-' . rand(1000, 9999);
+        $nextId = (int) Product::max('id') + 1;
+        $sku = !empty($validated['sku'])
+            ? strtoupper(trim($validated['sku']))
+            : ('LMN-SP' . str_pad((string) $nextId, 3, '0', STR_PAD_LEFT));
 
         Product::create([
+            'sku' => $sku,
             'name' => $validated['name'],
             'slug' => $slug,
             'price' => (int) $validated['price'],
@@ -173,7 +180,7 @@ class AdminController extends Controller
             'brand_id' => (int) $validated['brand_id'],
             'skin_type' => $validated['skin_type'],
             'volume' => $validated['volume'],
-            'stock' => (int) ($validated['stock'] ?? 80),
+            'stock' => isset($validated['stock']) ? (int) $validated['stock'] : 20,
             'images' => [
                 $validated['image'] ?? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=80',
             ],
@@ -183,7 +190,7 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.index')
-            ->with('success', 'Đã thêm sản phẩm mỹ phẩm mới vào kho hàng thành công!');
+            ->with('success', "Đã thêm sản phẩm mới [{$sku}] với tồn kho 20 SP thành công!");
     }
 
     public function updateProduct(Request $request, Product $product)
@@ -193,6 +200,7 @@ class AdminController extends Controller
         }
 
         $validated = $request->validate([
+            'sku' => 'nullable|string|max:50|unique:products,sku,' . $product->id,
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
@@ -212,6 +220,7 @@ class AdminController extends Controller
         }
 
         $product->update([
+            'sku' => !empty($validated['sku']) ? strtoupper(trim($validated['sku'])) : $product->product_code,
             'name' => $validated['name'],
             'price' => (int) $validated['price'],
             'sale_price' => !empty($validated['sale_price']) ? (int) $validated['sale_price'] : null,
@@ -227,7 +236,24 @@ class AdminController extends Controller
         ]);
 
         return redirect()->route('admin.index')
-            ->with('success', "Đã cập nhật sản phẩm \"{$product->name}\" thành công!");
+            ->with('success', "Đã cập nhật sản phẩm [{$product->product_code}] \"{$product->name}\" thành công!");
+    }
+
+    public function standardizeProducts()
+    {
+        if ($redirect = $this->authorizeShopOwner()) {
+            return $redirect;
+        }
+
+        $products = Product::orderBy('id')->get();
+        foreach ($products as $index => $product) {
+            $product->update([
+                'sku' => 'LMN-SP' . str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+                'stock' => 20,
+            ]);
+        }
+
+        return back()->with('success', 'Đã chuẩn hóa toàn bộ sản phẩm: Tất cả đều có Mã sản phẩm (LMN-SP001...) rõ ràng và tồn kho đồng bộ 20 sản phẩm!');
     }
 
     public function updateProductStock(Request $request, Product $product)

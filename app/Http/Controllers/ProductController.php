@@ -16,10 +16,11 @@ class ProductController extends Controller
 
         $query = Product::with(['category', 'brand']);
 
-        // Search filter
+        // Search filter (tìm theo Mã SP SKU, Tên SP, Hoạt chất, Mô tả)
         if ($search = trim((string) $request->query('search', ''))) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
+                $q->where('sku', 'ilike', "%{$search}%")
+                  ->orWhere('name', 'ilike', "%{$search}%")
                   ->orWhere('ingredients', 'ilike', "%{$search}%")
                   ->orWhere('description', 'ilike', "%{$search}%");
             });

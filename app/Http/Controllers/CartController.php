@@ -43,6 +43,7 @@ class CartController extends Controller
             }
             $mergedCart[(string) $product->id] = [
                 'id' => $product->id,
+                'sku' => $product->product_code,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'price' => $product->effective_price,
@@ -51,6 +52,7 @@ class CartController extends Controller
                 'volume' => $product->volume,
                 'skin_type' => $product->skin_type,
                 'brand_name' => $product->brand?->name ?? 'Lumina',
+                'stock' => $product->stock,
                 'quantity' => $ci->quantity,
                 'saved_at' => $ci->updated_at?->format('d/m/Y H:i'),
             ];
@@ -78,6 +80,7 @@ class CartController extends Controller
         } else {
             $cart[$id] = [
                 'id' => $product->id,
+                'sku' => $product->product_code,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'price' => $product->effective_price,
@@ -86,6 +89,7 @@ class CartController extends Controller
                 'volume' => $product->volume,
                 'skin_type' => $product->skin_type,
                 'brand_name' => $product->brand?->name ?? 'Lumina',
+                'stock' => $product->stock,
                 'quantity' => $quantity,
             ];
         }

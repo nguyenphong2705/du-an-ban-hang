@@ -50,6 +50,7 @@ Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admi
 
 Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
 Route::post('/admin/products', [AdminController::class, 'storeProduct'])->name('admin.products.store');
+Route::post('/admin/products/standardize', [AdminController::class, 'standardizeProducts'])->name('admin.products.standardize');
 Route::put('/admin/products/{product}', [AdminController::class, 'updateProduct'])->name('admin.products.update');
 Route::patch('/admin/products/{product}/stock', [AdminController::class, 'updateProductStock'])->name('admin.products.stock');
 Route::patch('/admin/products/{product}/best-seller', [AdminController::class, 'toggleBestSeller'])->name('admin.products.best-seller');

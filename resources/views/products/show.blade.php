@@ -51,6 +51,9 @@
         <div class="lg:col-span-6 space-y-6">
             <div class="space-y-3">
                 <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-mono font-bold bg-stone-900 text-white px-3 py-1 rounded-full">
+                        Mã SP: {{ $product->product_code }}
+                    </span>
                     <span class="text-xs font-bold uppercase tracking-widest text-rose-600 bg-rose-100/80 px-3 py-1 rounded-full">
                         {{ $product->brand->name }} ({{ $product->brand->origin }})
                     </span>
@@ -70,7 +73,7 @@
                     <span class="text-amber-400">★★★★★</span>
                     <span class="font-semibold text-stone-700">4.9/5</span>
                     <span class="text-stone-400">|</span>
-                    <span class="text-emerald-600 font-medium">Còn hàng ({{ $product->stock }} sản phẩm)</span>
+                    <span class="text-emerald-600 font-semibold">Tồn kho tiêu chuẩn: {{ $product->stock }} sản phẩm</span>
                 </div>
             </div>
 

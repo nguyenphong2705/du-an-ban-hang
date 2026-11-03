@@ -32,9 +32,14 @@
         <!-- Content -->
         <div class="p-5">
             <div class="flex items-center justify-between text-xs text-stone-400 mb-1.5">
-                <span class="font-semibold uppercase tracking-wider text-rose-500">
-                    {{ $product->brand->name ?? 'Lumina' }}
-                </span>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">
+                        {{ $product->product_code }}
+                    </span>
+                    <span class="font-semibold uppercase tracking-wider text-rose-500">
+                        {{ $product->brand->name ?? 'Lumina' }}
+                    </span>
+                </div>
                 <span>{{ $product->volume }}</span>
             </div>
 
@@ -42,8 +47,11 @@
                 {{ $product->name }}
             </a>
 
-            <div class="flex items-center gap-1 mt-2 text-amber-400 text-xs">
-                ★★★★★ <span class="text-stone-400 ml-1">(4.9)</span>
+            <div class="flex items-center justify-between mt-2 text-xs">
+                <span class="text-amber-400">★★★★★ <span class="text-stone-400 ml-0.5">(4.9)</span></span>
+                <span class="font-semibold {{ $product->stock > 0 ? 'text-emerald-600' : 'text-red-500' }}">
+                    Kho: {{ $product->stock }} SP
+                </span>
             </div>
         </div>
     </div>

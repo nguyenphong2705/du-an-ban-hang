@@ -167,13 +167,16 @@
                                 </span>
                                 <img src="{{ $prod->first_image }}" alt="{{ $prod->name }}" class="w-12 h-12 rounded-xl object-cover bg-white border border-stone-200 flex-shrink-0">
                                 <div class="min-w-0">
-                                    <a href="{{ route('products.show', $prod->slug) }}" target="_blank" class="text-xs font-bold text-stone-800 hover:text-rose-600 line-clamp-1">
-                                        {{ $prod->name }}
-                                    </a>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">{{ $prod->product_code }}</span>
+                                        <a href="{{ route('products.show', $prod->slug) }}" target="_blank" class="text-xs font-bold text-stone-800 hover:text-rose-600 line-clamp-1">
+                                            {{ $prod->name }}
+                                        </a>
+                                    </div>
                                     <div class="flex flex-wrap items-center gap-2 text-[11px] text-stone-500 mt-0.5">
                                         <span>Đã bán: <strong class="text-emerald-600">{{ $prod->sold_quantity }} SP</strong></span>
                                         <span>• Doanh thu: <strong class="text-rose-600">{{ number_format($prod->sold_revenue, 0, ',', '.') }}₫</strong></span>
-                                        <span>• Tồn kho: <strong>{{ $prod->stock }}</strong></span>
+                                        <span>• Tồn kho: <strong class="text-stone-800">{{ $prod->stock }} SP</strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -190,73 +193,58 @@
                 </div>
             </div>
 
-            <!-- Right: Out of Stock & Low Stock Alert + Quick Restock -->
+            <!-- Right: Inventory Status, Standardization & Quick Stock Adjustment -->
             <div class="lg:col-span-6 bg-white rounded-3xl border border-stone-200/80 p-6 shadow-xs space-y-4">
-                <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-red-600">⚠ Cảnh Báo Tồn Kho & Nhập Hàng Nhanh</span>
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-600">📦 Kiểm Soát Tồn Kho & Mã Sản Phẩm</span>
                         <h2 class="font-serif text-xl font-bold text-stone-800">
-                            Sản Phẩm Hết Hàng ({{ $outOfStockProducts->count() }}) & Sắp Hết ({{ $lowStockProducts->count() }})
+                            Hết Hàng ({{ $outOfStockProducts->count() }}) • Sắp Hết ({{ $lowStockProducts->count() }}) • Đủ Kho ({{ $allProducts->where('stock', '>', 15)->count() }})
                         </h2>
                     </div>
-                    <a href="{{ route('admin.index', ['stock_filter' => 'OUT_OF_STOCK']) }}#section-products" class="text-xs font-semibold text-red-600 hover:underline">
-                        Xem SP hết hàng →
-                    </a>
+                    <form action="{{ route('admin.products.standardize') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl shadow-xs transition">
+                            🔄 Chuẩn Hóa Toàn Bộ: Mã SP & Kho = 20 SP
+                        </button>
+                    </form>
                 </div>
 
-                <div class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                    <!-- Sản phẩm HẾT HÀNG (stock == 0) -->
-                    @foreach($outOfStockProducts as $prod)
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-red-200 bg-red-50/40">
+                @if($outOfStockProducts->isEmpty() && $lowStockProducts->isEmpty())
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-800 space-y-1">
+                        <p class="font-bold text-sm">✓ Toàn bộ {{ $allProducts->count() }} sản phẩm đã được chuẩn hóa đồng bộ!</p>
+                        <p>Tất cả sản phẩm đều có <strong>Mã sản phẩm (LMN-SP001 → LMN-SP{{ str_pad((string)$allProducts->count(), 3, '0', STR_PAD_LEFT) }})</strong> rõ ràng và số lượng tồn kho tiêu chuẩn là <strong>20 sản phẩm/mã</strong>.</p>
+                    </div>
+                @endif
+
+                <div class="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+                    @foreach(($outOfStockProducts->count() > 0 || $lowStockProducts->count() > 0) ? $outOfStockProducts->concat($lowStockProducts) : $allProducts as $prod)
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl border {{ $prod->stock <= 0 ? 'border-red-200 bg-red-50/40' : ($prod->stock <= 15 ? 'border-orange-200 bg-orange-50/40' : 'border-stone-200/80 bg-stone-50/60') }}">
                             <div class="flex items-center gap-3 min-w-0">
-                                <img src="{{ $prod->first_image }}" alt="{{ $prod->name }}" class="w-12 h-12 rounded-xl object-cover bg-white border border-red-200 flex-shrink-0">
+                                <img src="{{ $prod->first_image }}" alt="{{ $prod->name }}" class="w-11 h-11 rounded-xl object-cover bg-white border border-stone-200 flex-shrink-0">
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-600 text-white">
-                                            HẾT HÀNG (Tồn: 0)
+                                        <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">
+                                            {{ $prod->product_code }}
                                         </span>
-                                        <span class="text-[10px] font-semibold text-stone-500">{{ $prod->brand->name ?? '' }}</span>
+                                        @if($prod->stock <= 0)
+                                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-600 text-white">HẾT HÀNG (0)</span>
+                                        @elseif($prod->stock <= 15)
+                                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500 text-white">SẮP HẾT ({{ $prod->stock }})</span>
+                                        @else
+                                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">TỒN KHO: {{ $prod->stock }} SP</span>
+                                        @endif
                                     </div>
                                     <p class="text-xs font-bold text-stone-800 line-clamp-1 mt-0.5">{{ $prod->name }}</p>
-                                    <p class="text-[11px] text-rose-600 font-semibold">{{ number_format($prod->final_price, 0, ',', '.') }}₫</p>
-                                </div>
-                            </div>
-
-                            <!-- Quick Restock Form -->
-                            <form action="{{ route('admin.products.stock', $prod) }}" method="POST" class="flex items-center gap-1.5 flex-shrink-0">
-                                @csrf
-                                @method('PATCH')
-                                <input type="number" name="stock" value="50" min="0" class="w-16 px-2 py-1.5 text-xs font-bold text-center rounded-xl border border-red-300 bg-white">
-                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition">
-                                    + Nhập kho
-                                </button>
-                            </form>
-                        </div>
-                    @endforeach
-
-                    <!-- Sản phẩm SẮP HẾT HÀNG (1 <= stock <= 15) -->
-                    @foreach($lowStockProducts as $prod)
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-orange-200 bg-orange-50/40">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <img src="{{ $prod->first_image }}" alt="{{ $prod->name }}" class="w-12 h-12 rounded-xl object-cover bg-white border border-orange-200 flex-shrink-0">
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-orange-500 text-white">
-                                            SẮP HẾT (Còn: {{ $prod->stock }})
-                                        </span>
-                                        <span class="text-[10px] font-semibold text-stone-500">{{ $prod->brand->name ?? '' }}</span>
-                                    </div>
-                                    <p class="text-xs font-bold text-stone-800 line-clamp-1 mt-0.5">{{ $prod->name }}</p>
-                                    <p class="text-[11px] text-rose-600 font-semibold">{{ number_format($prod->final_price, 0, ',', '.') }}₫</p>
                                 </div>
                             </div>
 
                             <form action="{{ route('admin.products.stock', $prod) }}" method="POST" class="flex items-center gap-1.5 flex-shrink-0">
                                 @csrf
                                 @method('PATCH')
-                                <input type="number" name="stock" value="{{ $prod->stock + 50 }}" min="0" class="w-16 px-2 py-1.5 text-xs font-bold text-center rounded-xl border border-orange-300 bg-white">
-                                <button type="submit" class="bg-stone-900 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition">
-                                    Cập nhật kho
+                                <input type="number" name="stock" value="{{ $prod->stock }}" min="0" class="w-16 px-2 py-1 text-xs font-bold text-center rounded-xl border border-stone-300 bg-white">
+                                <button type="submit" class="bg-stone-900 hover:bg-rose-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded-xl transition">
+                                    Lưu kho
                                 </button>
                             </form>
                         </div>
@@ -338,7 +326,8 @@
                                         <ul class="space-y-1 text-xs">
                                             @foreach($order->items as $item)
                                                 <li class="text-stone-700">
-                                                    • <span class="font-medium">{{ $item->product->name ?? 'Sản phẩm #' . $item->product_id }}</span>
+                                                    • <span class="font-mono font-bold text-[11px] text-stone-900">[{{ $item->product->product_code ?? ('LMN-SP' . str_pad((string)$item->product_id, 3, '0', STR_PAD_LEFT)) }}]</span>
+                                                    <span class="font-medium">{{ $item->product->name ?? 'Sản phẩm #' . $item->product_id }}</span>
                                                     <span class="text-rose-600 font-bold">x{{ $item->quantity }}</span>
                                                     <span class="text-stone-400">({{ number_format($item->price, 0, ',', '.') }}₫)</span>
                                                 </li>
@@ -437,9 +426,15 @@
                         @method('PUT')
                     @endif
 
-                    <div>
-                        <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Tên sản phẩm mỹ phẩm *</label>
-                        <input type="text" name="name" required value="{{ old('name', $editingProduct->name ?? '') }}" placeholder="VD: Tinh Chất Phục Hồi B5 La Roche-Posay" class="w-full px-3.5 py-2.5 text-sm rounded-2xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Mã SP (SKU) *</label>
+                            <input type="text" name="sku" value="{{ old('sku', $editingProduct->product_code ?? ('LMN-SP' . str_pad((string)($allProducts->count() + 1), 3, '0', STR_PAD_LEFT))) }}" placeholder="LMN-SP013" class="w-full px-3 py-2.5 text-sm font-mono font-bold uppercase rounded-2xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Tên sản phẩm mỹ phẩm *</label>
+                            <input type="text" name="name" required value="{{ old('name', $editingProduct->name ?? '') }}" placeholder="VD: Tinh Chất Phục Hồi B5 La Roche-Posay" class="w-full px-3.5 py-2.5 text-sm rounded-2xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-300">
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -490,8 +485,8 @@
                             <input type="text" name="volume" required value="{{ old('volume', $editingProduct->volume ?? '30ml') }}" placeholder="30ml / 50g" class="w-full px-3 py-2.5 text-sm rounded-2xl border border-stone-200 bg-stone-50">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Tồn kho (0=Hết) *</label>
-                            <input type="number" name="stock" required min="0" value="{{ old('stock', $editingProduct->stock ?? 80) }}" class="w-full px-3 py-2.5 text-sm rounded-2xl border border-stone-200 bg-stone-50">
+                            <label class="block text-xs font-semibold uppercase text-stone-600 mb-1">Tồn kho chuẩn *</label>
+                            <input type="number" name="stock" required min="0" value="{{ old('stock', $editingProduct->stock ?? 20) }}" class="w-full px-3 py-2.5 text-sm rounded-2xl border border-stone-200 bg-stone-50">
                         </div>
                     </div>
 
@@ -571,6 +566,9 @@
                                 <img src="{{ $product->first_image }}" alt="{{ $product->name }}" class="w-14 h-14 rounded-2xl object-cover bg-white border border-stone-200 flex-shrink-0">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-1.5">
+                                        <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">
+                                            {{ $product->product_code }}
+                                        </span>
                                         <span class="text-[10px] font-bold uppercase text-rose-500">{{ $product->brand->name ?? '' }}</span>
                                         <span class="text-[10px] text-stone-400">• {{ $product->category->name ?? '' }}</span>
                                         @if($product->is_best_seller)
@@ -579,9 +577,9 @@
                                         @if($product->stock <= 0)
                                             <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-full">HẾT HÀNG</span>
                                         @elseif($product->stock <= 15)
-                                            <span class="text-[10px] bg-orange-500 text-white font-bold px-2 py-0.5 rounded-full">SẮP HẾT ({{ $product->stock }})</span>
+                                            <span class="text-[10px] bg-orange-500 text-white font-bold px-2 py-0.5 rounded-full">SẮP HẾT ({{ $product->stock }} SP)</span>
                                         @else
-                                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Tồn: {{ $product->stock }}</span>
+                                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Tồn kho: {{ $product->stock }} SP</span>
                                         @endif
                                     </div>
                                     <a href="{{ route('products.show', $product->slug) }}" target="_blank" class="text-sm font-bold text-stone-800 hover:text-rose-600 line-clamp-1">

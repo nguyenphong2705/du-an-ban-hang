@@ -12,6 +12,7 @@ class Product extends Model
     use HasFactory;
 
     protected $fillable = [
+        'sku',
         'category_id',
         'brand_id',
         'name',
@@ -61,6 +62,11 @@ class Product extends Model
     public function getFinalPriceAttribute(): int
     {
         return $this->sale_price ?? $this->price;
+    }
+
+    public function getProductCodeAttribute(): string
+    {
+        return $this->sku ?: ('LMN-SP' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT));
     }
 
     public function getFirstImageAttribute(): string

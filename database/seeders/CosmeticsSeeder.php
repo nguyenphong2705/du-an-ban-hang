@@ -372,15 +372,11 @@ class CosmeticsSeeder extends Seeder
         ];
 
         $createdProducts = [];
-        foreach ($products as $item) {
+        foreach ($products as $index => $item) {
+            $item['sku'] = 'LMN-SP' . str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT);
+            $item['stock'] = 20;
             $createdProducts[] = Product::create($item);
         }
-
-        // Cập nhật tồn kho đa dạng để trang Quản trị viên thống kê rõ ràng: Hết hàng (0) & Sắp hết hàng (<= 10)
-        $createdProducts[4]->update(['stock' => 0]);  // Kem Dưỡng Nhân Sâm Sulwhasoo -> Hết hàng
-        $createdProducts[8]->update(['stock' => 0]);  // Kem Nền Shiseido Synchro Skin -> Hết hàng
-        $createdProducts[2]->update(['stock' => 5]);  // Kem Dưỡng Retinol 0.5% -> Sắp hết hàng (còn 5)
-        $createdProducts[11]->update(['stock' => 8]); // Nước Hoa Lancôme La Vie Est Belle -> Sắp hết hàng (còn 8)
 
         // 4. Tạo Giỏ hàng đã lưu từ trước (Saved Cart Items) cho tài khoản khách hàng mẫu tuyenthanhthanh3979
         CartItem::create([

@@ -26,13 +26,14 @@ return new class extends Migration
 
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->string('sku')->unique();
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
             $table->string('name');
             $table->string('slug')->unique();
             $table->unsignedBigInteger('price');
             $table->unsignedBigInteger('sale_price')->nullable();
-            $table->integer('stock')->default(100);
+            $table->integer('stock')->default(20);
             $table->json('images');
             $table->text('description');
             $table->text('ingredients');

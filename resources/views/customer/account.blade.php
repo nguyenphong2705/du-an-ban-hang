@@ -101,8 +101,14 @@
                             <div class="flex items-center gap-3.5 min-w-0">
                                 <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="w-16 h-16 rounded-2xl object-cover bg-white border border-rose-100 flex-shrink-0">
                                 <div class="min-w-0">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500">{{ $item['brand_name'] ?? 'Lumina' }}</span>
-                                    <a href="{{ route('products.show', $item['slug']) }}" class="block text-sm font-bold text-stone-800 hover:text-rose-600 line-clamp-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">
+                                            {{ $item['sku'] ?? ('LMN-SP' . str_pad((string)$item['id'], 3, '0', STR_PAD_LEFT)) }}
+                                        </span>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500">{{ $item['brand_name'] ?? 'Lumina' }}</span>
+                                        <span class="text-[10px] text-emerald-600 font-semibold">• Kho: {{ $item['stock'] ?? 20 }} SP</span>
+                                    </div>
+                                    <a href="{{ route('products.show', $item['slug']) }}" class="block text-sm font-bold text-stone-800 hover:text-rose-600 line-clamp-1 mt-0.5">
                                         {{ $item['name'] }}
                                     </a>
                                     <p class="text-xs text-stone-400">{{ $item['volume'] }} • {{ $item['skin_type'] }}</p>
@@ -266,7 +272,8 @@
                                             alt="{{ $item->product->name ?? '' }}"
                                             class="w-12 h-12 rounded-xl object-cover bg-rose-50 flex-shrink-0">
                                         <div class="min-w-0">
-                                            <a href="{{ isset($item->product->slug) ? route('products.show', $item->product->slug) : '#' }}" class="text-xs font-bold text-stone-800 hover:text-rose-600 line-clamp-1">
+                                            <span class="font-mono text-[10px] font-bold text-rose-600">{{ $item->product->product_code ?? ('LMN-SP' . str_pad((string)$item->product_id, 3, '0', STR_PAD_LEFT)) }}</span>
+                                            <a href="{{ isset($item->product->slug) ? route('products.show', $item->product->slug) : '#' }}" class="block text-xs font-bold text-stone-800 hover:text-rose-600 line-clamp-1">
                                                 {{ $item->product->name ?? 'Sản phẩm #' . $item->product_id }}
                                             </a>
                                             <p class="text-[11px] text-stone-500">
@@ -326,7 +333,11 @@
                 <div class="rounded-2xl border border-rose-100 bg-[#FDFBF7] overflow-hidden flex flex-col justify-between p-4 space-y-3 hover:shadow-md transition">
                     <div class="space-y-2">
                         <img src="{{ $product->first_image }}" alt="{{ $product->name }}" class="w-full h-44 object-cover rounded-xl bg-white">
-                        <span class="text-[10px] font-bold uppercase text-rose-500">{{ $product->brand->name ?? '' }} • {{ $product->skin_type }}</span>
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="font-mono font-bold bg-stone-900 text-white px-2 py-0.5 rounded-md">{{ $product->product_code }}</span>
+                            <span class="font-semibold text-emerald-600">Kho: {{ $product->stock }} SP</span>
+                        </div>
+                        <span class="block text-[10px] font-bold uppercase text-rose-500">{{ $product->brand->name ?? '' }} • {{ $product->skin_type }}</span>
                         <a href="{{ route('products.show', $product->slug) }}" class="block text-sm font-bold text-stone-800 hover:text-rose-600 line-clamp-2">
                             {{ $product->name }}
                         </a>
