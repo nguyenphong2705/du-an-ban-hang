@@ -63,6 +63,10 @@
         'Da dầu & Lỗ chân lông to': 'Oily Skin & Enlarged Pores',
         'Da nhạy cảm & Phục hồi B5': 'Sensitive Skin & B5 Recovery',
         'Liên Hệ & Hỗ Trợ': 'Contact & Support',
+        'Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản.': 'Official distributor of luxury cosmetics & science-backed skincare from France, South Korea, and Japan.',
+        'Hotline tư vấn da liễu: 1900 6868': 'Dermatology Hotline: 1900 6868',
+        'Cửa Hàng: 28 Phạm Văn Chiêu, Phường Thông Tây Hội, Tp. Hồ Chí Minh': 'Store: 28 Pham Van Chieu, Thong Tay Hoi Ward, Ho Chi Minh City',
+        'Cam kết 100% sản phẩm chính hãng có tem phụ tiếng Việt.': '100% authentic products guaranteed with official certification labels.',
 
         // Product Cards & Product Pages
         '+ Thêm giỏ': '+ Add to Cart',

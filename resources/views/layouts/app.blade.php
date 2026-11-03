@@ -186,7 +186,7 @@
                     Lumina <span class="text-rose-400 italic font-normal">Beauty</span>
                 </span>
                 <p class="text-xs text-stone-400 leading-relaxed">
-                    Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản. Vận hành trên nền tảng PHP Laravel 11 & Docker PostgreSQL.
+                    Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản.
                 </p>
             </div>
             <div>
@@ -211,13 +211,10 @@
                 <h4 class="text-xs font-bold uppercase tracking-widest text-rose-400 mb-3">Liên Hệ & Hỗ Trợ</h4>
                 <p class="text-xs text-stone-400 leading-relaxed">
                     Hotline tư vấn da liễu: 1900 6868<br>
-                    Showroom: 128 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh<br>
+                    Cửa Hàng: 28 Phạm Văn Chiêu, Phường Thông Tây Hội, Tp. Hồ Chí Minh<br>
                     Cam kết 100% sản phẩm chính hãng có tem phụ tiếng Việt.
                 </p>
             </div>
-        </div>
-        <div class="border-t border-stone-800 py-5 text-center text-xs text-stone-500">
-            © 2026 Lumina Beauty — Powered by PHP Laravel 11, Eloquent ORM & Docker PostgreSQL.
         </div>
     </footer>
 
