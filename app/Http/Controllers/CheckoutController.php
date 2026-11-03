@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
@@ -111,6 +114,7 @@ class CheckoutController extends Controller
 
         $order = DB::transaction(function () use ($validated, $cart, $totalAmount, $couponCode, $discountAmount) {
             $newOrder = Order::create([
+                'user_id' => Auth::id(),
                 'customer_name' => $validated['customer_name'],
                 'phone' => $validated['phone'],
                 'address' => $validated['address'],
@@ -129,11 +133,18 @@ class CheckoutController extends Controller
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                 ]);
+
+                Product::where('id', $item['id'])
+                    ->where('stock', '>=', $item['quantity'])
+                    ->decrement('stock', $item['quantity']);
             }
 
             return $newOrder;
         });
 
+        if (Auth::check()) {
+            CartItem::where('user_id', Auth::id())->delete();
+        }
         session()->forget(['cart', 'applied_coupon']);
         session()->put('last_customer_phone', $validated['phone']);
 

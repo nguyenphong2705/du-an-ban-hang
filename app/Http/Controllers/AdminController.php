@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ class AdminController extends Controller
     {
         if (!Auth::check() || !Auth::user()->is_admin) {
             return redirect()->route('admin.login')
-                ->with('error', 'Vui lòng đăng nhập bằng tài khoản Chủ Shop (Admin) để truy cập trang quản trị.');
+                ->with('error', 'Vui lòng đăng nhập bằng tài khoản Quản trị viên của Shop để truy cập.');
         }
 
         return null;
@@ -29,38 +30,114 @@ class AdminController extends Controller
             return $redirect;
         }
 
-        $orders = Order::with('items.product')->latest()->get();
-        $products = Product::with(['category', 'brand'])->latest()->get();
+        // Toàn bộ dữ liệu gốc để tính KPI & Thống kê
+        $allOrders = Order::with('items.product')->latest()->get();
+        $allProducts = Product::with(['category', 'brand', 'orderItems'])->latest()->get();
         $categories = Category::withCount('products')->get();
         $brands = Brand::withCount('products')->get();
         $coupons = Coupon::latest()->get();
+        $customersCount = User::where('is_admin', false)->count();
+
+        // Tính toán số lượng đã bán & doanh thu từng sản phẩm
+        foreach ($allProducts as $prod) {
+            $prod->sold_quantity = (int) $prod->orderItems->sum('quantity');
+            $prod->sold_revenue = (int) $prod->orderItems->sum(fn ($oi) => $oi->quantity * $oi->price);
+        }
+
+        // Thống kê Sản phẩm Bán chạy (Best Sellers & Top Sold)
+        $bestSellingProducts = $allProducts
+            ->filter(fn ($p) => $p->is_best_seller || $p->sold_quantity > 0)
+            ->sortByDesc(fn ($p) => ($p->sold_quantity * 1000) + ($p->is_best_seller ? 500 : 0))
+            ->values();
+
+        // Thống kê Sản phẩm Hết hàng (stock == 0) & Sắp hết hàng (1 <= stock <= 15)
+        $outOfStockProducts = $allProducts->where('stock', '<=', 0)->values();
+        $lowStockProducts = $allProducts->filter(fn ($p) => $p->stock > 0 && $p->stock <= 15)->sortBy('stock')->values();
+
+        // Bộ lọc Tra cứu Đơn hàng cho Quản trị viên
+        $orderSearch = trim($request->query('order_search', ''));
+        $orderStatus = $request->query('order_status', 'ALL');
+
+        $orders = $allOrders->filter(function ($order) use ($orderSearch, $orderStatus) {
+            if ($orderStatus !== 'ALL' && $order->status !== $orderStatus) {
+                return false;
+            }
+            if ($orderSearch !== '') {
+                $kw = mb_strtolower($orderSearch);
+                $matchId = str_contains(mb_strtolower('#order-' . $order->id), $kw) || (string) $order->id === $kw;
+                $matchName = str_contains(mb_strtolower($order->customer_name), $kw);
+                $matchPhone = str_contains(mb_strtolower($order->phone), $kw);
+                return $matchId || $matchName || $matchPhone;
+            }
+            return true;
+        })->values();
+
+        // Bộ lọc Xem & Quản lý Sản phẩm trong Kho
+        $productSearch = trim($request->query('product_search', ''));
+        $stockFilter = $request->query('stock_filter', 'ALL');
+        $categoryFilter = $request->query('category_filter', 'ALL');
+
+        $products = $allProducts->filter(function ($product) use ($productSearch, $stockFilter, $categoryFilter) {
+            if ($categoryFilter !== 'ALL' && (string) $product->category_id !== (string) $categoryFilter) {
+                return false;
+            }
+            if ($stockFilter === 'BEST_SELLER' && !$product->is_best_seller) {
+                return false;
+            }
+            if ($stockFilter === 'OUT_OF_STOCK' && $product->stock > 0) {
+                return false;
+            }
+            if ($stockFilter === 'LOW_STOCK' && ($product->stock <= 0 || $product->stock > 15)) {
+                return false;
+            }
+            if ($stockFilter === 'IN_STOCK' && $product->stock <= 15) {
+                return false;
+            }
+            if ($productSearch !== '') {
+                $kw = mb_strtolower($productSearch);
+                return str_contains(mb_strtolower($product->name), $kw)
+                    || str_contains(mb_strtolower($product->brand->name ?? ''), $kw)
+                    || str_contains(mb_strtolower($product->skin_type ?? ''), $kw);
+            }
+            return true;
+        })->values();
 
         $editingProduct = null;
         if ($editId = $request->query('edit_product')) {
             $editingProduct = Product::find($editId);
         }
 
-        $activeTab = $request->query('tab', 'dashboard');
-
-        // KPI Metrics cho Chủ Shop
+        // KPI Metrics tổng hợp cho Quản trị viên
         $stats = [
-            'total_revenue' => $orders->where('status', '!=', 'CANCELLED')->sum('total_amount'),
-            'completed_revenue' => $orders->where('status', 'COMPLETED')->sum('total_amount'),
-            'total_orders' => $orders->count(),
-            'pending_orders' => $orders->whereIn('status', ['PENDING', 'CONFIRMED'])->count(),
-            'total_products' => $products->count(),
-            'low_stock_products' => $products->where('stock', '<=', 35)->count(),
+            'total_revenue' => $allOrders->where('status', '!=', 'CANCELLED')->sum('total_amount'),
+            'completed_revenue' => $allOrders->where('status', 'COMPLETED')->sum('total_amount'),
+            'total_orders' => $allOrders->count(),
+            'pending_orders' => $allOrders->whereIn('status', ['PENDING', 'CONFIRMED', 'SHIPPING'])->count(),
+            'total_products' => $allProducts->count(),
+            'best_seller_count' => $bestSellingProducts->count(),
+            'out_of_stock_count' => $outOfStockProducts->count(),
+            'low_stock_count' => $lowStockProducts->count(),
             'active_coupons' => $coupons->where('is_active', true)->count(),
+            'customers_count' => $customersCount,
         ];
 
         return view('admin.index', compact(
             'orders',
+            'allOrders',
             'products',
+            'allProducts',
+            'bestSellingProducts',
+            'outOfStockProducts',
+            'lowStockProducts',
             'categories',
             'brands',
             'coupons',
             'editingProduct',
-            'activeTab',
+            'orderSearch',
+            'orderStatus',
+            'productSearch',
+            'stockFilter',
+            'categoryFilter',
             'stats'
         ));
     }
@@ -105,8 +182,8 @@ class AdminController extends Controller
             'is_best_seller' => $request->has('is_best_seller'),
         ]);
 
-        return redirect()->route('admin.index', ['tab' => 'products'])
-            ->with('success', 'Đã thêm sản phẩm mỹ phẩm mới vào kho hàng!');
+        return redirect()->route('admin.index')
+            ->with('success', 'Đã thêm sản phẩm mỹ phẩm mới vào kho hàng thành công!');
     }
 
     public function updateProduct(Request $request, Product $product)
@@ -142,15 +219,41 @@ class AdminController extends Controller
             'brand_id' => (int) $validated['brand_id'],
             'skin_type' => $validated['skin_type'],
             'volume' => $validated['volume'],
-            'stock' => (int) ($validated['stock'] ?? $product->stock),
+            'stock' => isset($validated['stock']) ? (int) $validated['stock'] : $product->stock,
             'images' => $images,
             'ingredients' => $validated['ingredients'] ?? $product->ingredients,
             'description' => $validated['description'] ?? $product->description,
             'is_best_seller' => $request->has('is_best_seller'),
         ]);
 
-        return redirect()->route('admin.index', ['tab' => 'products'])
+        return redirect()->route('admin.index')
             ->with('success', "Đã cập nhật sản phẩm \"{$product->name}\" thành công!");
+    }
+
+    public function updateProductStock(Request $request, Product $product)
+    {
+        if ($redirect = $this->authorizeShopOwner()) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'stock' => 'required|integer|min:0',
+        ]);
+
+        $product->update(['stock' => (int) $validated['stock']]);
+
+        return back()->with('success', "Đã cập nhật tồn kho sản phẩm \"{$product->name}\" thành {$product->stock} sản phẩm!");
+    }
+
+    public function toggleBestSeller(Product $product)
+    {
+        if ($redirect = $this->authorizeShopOwner()) {
+            return $redirect;
+        }
+
+        $product->update(['is_best_seller' => !$product->is_best_seller]);
+
+        return back()->with('success', "Đã cập nhật trạng thái Bán chạy (Best Seller) cho \"{$product->name}\"!");
     }
 
     public function destroyProduct(Product $product)
@@ -162,8 +265,7 @@ class AdminController extends Controller
         $name = $product->name;
         $product->delete();
 
-        return redirect()->route('admin.index', ['tab' => 'products'])
-            ->with('success', "Đã xóa sản phẩm \"{$name}\" khỏi hệ thống.");
+        return back()->with('success', "Đã xóa sản phẩm \"{$name}\" khỏi hệ thống.");
     }
 
     public function updateOrderStatus(Request $request, Order $order)
@@ -178,8 +280,7 @@ class AdminController extends Controller
 
         $order->update(['status' => $request->input('status')]);
 
-        return redirect()->route('admin.index', ['tab' => 'orders'])
-            ->with('success', "Đã cập nhật trạng thái đơn hàng #ORDER-{$order->id} sang {$order->status}.");
+        return back()->with('success', "Đã cập nhật trạng thái đơn hàng #ORDER-{$order->id} sang {$order->status}.");
     }
 
     public function destroyOrder(Order $order)
@@ -191,11 +292,9 @@ class AdminController extends Controller
         $id = $order->id;
         $order->delete();
 
-        return redirect()->route('admin.index', ['tab' => 'orders'])
-            ->with('success', "Đã xóa đơn hàng #ORDER-{$id}.");
+        return back()->with('success', "Đã xóa đơn hàng #ORDER-{$id}.");
     }
 
-    // Quản lý Mã giảm giá (Coupons / Vouchers)
     public function storeCoupon(Request $request)
     {
         if ($redirect = $this->authorizeShopOwner()) {
@@ -205,18 +304,21 @@ class AdminController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:coupons,code',
             'discount_percent' => 'required|integer|min:1|max:90',
+            'description' => 'nullable|string|max:255',
+            'min_order_amount' => 'nullable|numeric|min:0',
             'expires_at' => 'required|date',
         ]);
 
         Coupon::create([
             'code' => strtoupper(trim($validated['code'])),
             'discount_percent' => (int) $validated['discount_percent'],
+            'description' => $validated['description'] ?? "Giảm {$validated['discount_percent']}% cho đơn hàng mỹ phẩm",
+            'min_order_amount' => (int) ($validated['min_order_amount'] ?? 0),
             'expires_at' => $validated['expires_at'],
             'is_active' => true,
         ]);
 
-        return redirect()->route('admin.index', ['tab' => 'coupons'])
-            ->with('success', 'Đã phát hành mã giảm giá (Voucher) mới thành công!');
+        return back()->with('success', 'Đã phát hành mã giảm giá (Voucher) mới thành công!');
     }
 
     public function toggleCoupon(Coupon $coupon)
@@ -227,8 +329,7 @@ class AdminController extends Controller
 
         $coupon->update(['is_active' => !$coupon->is_active]);
 
-        return redirect()->route('admin.index', ['tab' => 'coupons'])
-            ->with('success', "Đã cập nhật trạng thái mã giảm giá {$coupon->code}.");
+        return back()->with('success', "Đã cập nhật trạng thái mã giảm giá {$coupon->code}.");
     }
 
     public function destroyCoupon(Coupon $coupon)
@@ -240,11 +341,9 @@ class AdminController extends Controller
         $code = $coupon->code;
         $coupon->delete();
 
-        return redirect()->route('admin.index', ['tab' => 'coupons'])
-            ->with('success', "Đã xóa mã giảm giá {$code}.");
+        return back()->with('success', "Đã xóa mã giảm giá {$code}.");
     }
 
-    // Quản lý Danh mục & Thương hiệu
     public function storeCategory(Request $request)
     {
         if ($redirect = $this->authorizeShopOwner()) {
@@ -262,8 +361,7 @@ class AdminController extends Controller
             'image' => $validated['image'] ?? 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80',
         ]);
 
-        return redirect()->route('admin.index', ['tab' => 'catalog'])
-            ->with('success', "Đã thêm danh mục \"{$validated['name']}\"!");
+        return back()->with('success', "Đã thêm danh mục \"{$validated['name']}\"!");
     }
 
     public function storeBrand(Request $request)
@@ -284,7 +382,6 @@ class AdminController extends Controller
             'logo' => $validated['logo'] ?? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=400&q=80',
         ]);
 
-        return redirect()->route('admin.index', ['tab' => 'catalog'])
-            ->with('success', "Đã thêm thương hiệu \"{$validated['name']}\"!");
+        return back()->with('success', "Đã thêm thương hiệu \"{$validated['name']}\"!");
     }
 }

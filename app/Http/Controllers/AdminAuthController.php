@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AdminAuthController extends Controller
 {
@@ -19,31 +20,34 @@ class AdminAuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $validated = $request->validate([
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        $remember = $request->boolean('remember');
+        $loginInput = trim($validated['email']);
+        $remember = $request->boolean('remember', true);
 
-        if (Auth::attempt($credentials, $remember)) {
-            $user = Auth::user();
+        $user = User::where('email', $loginInput)
+            ->orWhere('username', $loginInput)
+            ->first();
 
+        if ($user && Hash::check($validated['password'], $user->password)) {
             if (!$user->is_admin) {
-                Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Tài khoản này không có quyền Quản trị Chủ Shop (Admin).',
+                    'email' => 'Tài khoản này là tài khoản Khách hàng, không có quyền Quản trị viên Chủ Shop. Vui lòng đăng nhập tại Trang Khách Hàng (/login).',
                 ])->onlyInput('email');
             }
 
+            Auth::login($user, $remember);
             $request->session()->regenerate();
 
             return redirect()->route('admin.index')
-                ->with('success', "Chào mừng Chủ Shop {$user->name} đã đăng nhập vào hệ thống quản trị!");
+                ->with('success', "Chào mừng Quản trị viên {$user->name} đã đăng nhập vào hệ thống quản trị Shop!");
         }
 
         return back()->withErrors([
-            'email' => 'Email hoặc mật khẩu Chủ Shop không chính xác.',
+            'email' => 'Email / Tên đăng nhập hoặc mật khẩu Quản trị viên không chính xác.',
         ])->onlyInput('email');
     }
 
@@ -54,6 +58,6 @@ class AdminAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login')
-            ->with('success', 'Đã đăng xuất khỏi phiên làm việc Chủ Shop.');
+            ->with('success', 'Đã đăng xuất khỏi phiên làm việc Quản trị viên.');
     }
 }

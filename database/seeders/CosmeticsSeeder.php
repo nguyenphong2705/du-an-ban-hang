@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Brand;
+use App\Models\CartItem;
 use App\Models\Category;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -16,6 +17,7 @@ class CosmeticsSeeder extends Seeder
 {
     public function run(): void
     {
+        CartItem::query()->delete();
         OrderItem::query()->delete();
         Order::query()->delete();
         Coupon::query()->delete();
@@ -24,10 +26,13 @@ class CosmeticsSeeder extends Seeder
         Brand::query()->delete();
         User::query()->delete();
 
-        // 0. Tạo tài khoản Admin Chủ Shop (Shop Owner Accounts)
+        // 0. Tạo tài khoản Quản trị viên Chủ Shop (Shop Admin Accounts)
         User::create([
             'name' => 'Chủ Shop Lumina Beauty',
+            'username' => 'admin',
             'email' => 'admin@luminabeauty.vn',
+            'phone' => '0901000888',
+            'address' => 'Showroom 128 Nguyễn Huệ, Quận 1, TP.HCM',
             'password' => Hash::make('Admin@123456'),
             'is_admin' => true,
             'role' => 'admin',
@@ -35,35 +40,58 @@ class CosmeticsSeeder extends Seeder
 
         User::create([
             'name' => 'Nguyễn Phong (Shop Owner)',
+            'username' => 'nguyenphong2705',
             'email' => 'phongdev3979@gmail.com',
+            'phone' => '0909270599',
+            'address' => 'Showroom Lumina Beauty Quận 1, TP.HCM',
             'password' => Hash::make('Admin@123456'),
             'is_admin' => true,
             'role' => 'admin',
         ]);
 
-        // 0.1. Tạo các Mã giảm giá (Coupons / Vouchers)
+        // 0.05. Tạo tài khoản Khách Hàng Mẫu để theo dõi Đơn hàng, Giỏ hàng & Voucher
+        $customerUser = User::create([
+            'name' => 'Tuyền Thanh Thanh',
+            'username' => 'tuyenthanhthanh3979',
+            'email' => 'tuyenthanhthanh3979@gmail.com',
+            'phone' => '0909397979',
+            'address' => '215 Lê Thánh Tôn, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+            'password' => Hash::make('Phong2705@@'),
+            'is_admin' => false,
+            'role' => 'customer',
+        ]);
+
+        // 0.1. Tạo các Mã giảm giá (Coupons / Vouchers) dành cho Khách hàng
         $coupons = [
             [
                 'code' => 'LUMINA20',
                 'discount_percent' => 20,
+                'description' => 'Giảm 20% toàn bộ dòng Serum & Kem dưỡng chăm sóc da cao cấp',
+                'min_order_amount' => 300000,
                 'expires_at' => now()->addMonths(6),
                 'is_active' => true,
             ],
             [
                 'code' => 'FLASHSALE30',
                 'discount_percent' => 30,
+                'description' => 'Siêu ưu đãi Flash Sale giảm sâu 30% cho thành viên thân thiết',
+                'min_order_amount' => 800000,
                 'expires_at' => now()->addMonths(3),
                 'is_active' => true,
             ],
             [
                 'code' => 'SKINCARE15',
                 'discount_percent' => 15,
+                'description' => 'Giảm 15% cho các sản phẩm phục hồi da nhạy cảm B5 & Ceramide',
+                'min_order_amount' => 250000,
                 'expires_at' => now()->addMonths(6),
                 'is_active' => true,
             ],
             [
                 'code' => 'NEWMEMBER10',
                 'discount_percent' => 10,
+                'description' => 'Quà tặng chào mừng khách hàng mới giảm ngay 10% mọi đơn hàng',
+                'min_order_amount' => 0,
                 'expires_at' => now()->addYear(),
                 'is_active' => true,
             ],
@@ -348,47 +376,97 @@ class CosmeticsSeeder extends Seeder
             $createdProducts[] = Product::create($item);
         }
 
-        // 4. Tạo 2 đơn hàng mẫu để Chủ Shop theo dõi trên Dashboard
-        $order1 = Order::create([
-            'customer_name' => 'Trần Ngọc Lan Khuê',
-            'phone' => '0909123456',
-            'address' => '88 Đồng Khởi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-            'note' => 'Giao giờ hành chính giúp mình nhé',
+        // Cập nhật tồn kho đa dạng để trang Quản trị viên thống kê rõ ràng: Hết hàng (0) & Sắp hết hàng (<= 10)
+        $createdProducts[4]->update(['stock' => 0]);  // Kem Dưỡng Nhân Sâm Sulwhasoo -> Hết hàng
+        $createdProducts[8]->update(['stock' => 0]);  // Kem Nền Shiseido Synchro Skin -> Hết hàng
+        $createdProducts[2]->update(['stock' => 5]);  // Kem Dưỡng Retinol 0.5% -> Sắp hết hàng (còn 5)
+        $createdProducts[11]->update(['stock' => 8]); // Nước Hoa Lancôme La Vie Est Belle -> Sắp hết hàng (còn 8)
+
+        // 4. Tạo Giỏ hàng đã lưu từ trước (Saved Cart Items) cho tài khoản khách hàng mẫu tuyenthanhthanh3979
+        CartItem::create([
+            'user_id' => $customerUser->id,
+            'product_id' => $createdProducts[0]->id, // Tinh Chất Niacinamide 10%
+            'quantity' => 2,
+        ]);
+        CartItem::create([
+            'user_id' => $customerUser->id,
+            'product_id' => $createdProducts[5]->id, // Kem Dưỡng Cicaplast Baume B5+
+            'quantity' => 1,
+        ]);
+        CartItem::create([
+            'user_id' => $customerUser->id,
+            'product_id' => $createdProducts[7]->id, // Son Thỏi Lancôme L'Absolu Rouge
+            'quantity' => 1,
+        ]);
+
+        // 5. Tạo các Đơn hàng mẫu gắn với tài khoản khách hàng tuyenthanhthanh3979 & khách lẻ
+        $orderCustomer1 = Order::create([
+            'user_id' => $customerUser->id,
+            'customer_name' => $customerUser->name,
+            'phone' => $customerUser->phone,
+            'address' => $customerUser->address,
+            'note' => 'Giao giờ hành chính, gọi trước khi giao 15 phút',
             'payment_method' => 'COD',
             'coupon_code' => 'LUMINA20',
-            'discount_amount' => 179000,
-            'total_amount' => 716000,
+            'discount_amount' => 248000,
+            'total_amount' => 992000,
             'status' => 'COMPLETED',
         ]);
         OrderItem::create([
-            'order_id' => $order1->id,
+            'order_id' => $orderCustomer1->id,
             'product_id' => $createdProducts[0]->id,
-            'quantity' => 1,
+            'quantity' => 2,
             'price' => 345000,
         ]);
         OrderItem::create([
-            'order_id' => $order1->id,
+            'order_id' => $orderCustomer1->id,
             'product_id' => $createdProducts[3]->id,
             'quantity' => 1,
             'price' => 550000,
         ]);
 
-        $order2 = Order::create([
-            'customer_name' => 'Lê Hoàng Bảo Trâm',
-            'phone' => '0918888999',
-            'address' => '254 Cầu Giấy, Quận Cầu Giấy, Hà Nội',
-            'note' => 'Đóng gói hộp quà tặng kèm thiệp',
+        $orderCustomer2 = Order::create([
+            'user_id' => $customerUser->id,
+            'customer_name' => $customerUser->name,
+            'phone' => $customerUser->phone,
+            'address' => $customerUser->address,
+            'note' => 'Tặng kèm mẫu thử kem chống nắng La Roche-Posay',
             'payment_method' => 'BANK_TRANSFER',
-            'coupon_code' => null,
-            'discount_amount' => 0,
-            'total_amount' => 1150000,
-            'status' => 'PENDING',
+            'coupon_code' => 'SKINCARE15',
+            'discount_amount' => 285000,
+            'total_amount' => 1615000,
+            'status' => 'SHIPPING',
         ]);
         OrderItem::create([
-            'order_id' => $order2->id,
+            'order_id' => $orderCustomer2->id,
+            'product_id' => $createdProducts[1]->id,
+            'quantity' => 1,
+            'price' => 750000,
+        ]);
+        OrderItem::create([
+            'order_id' => $orderCustomer2->id,
             'product_id' => $createdProducts[6]->id,
             'quantity' => 1,
             'price' => 1150000,
+        ]);
+
+        $order3 = Order::create([
+            'user_id' => null,
+            'customer_name' => 'Lê Hoàng Bảo Trâm',
+            'phone' => '0918888999',
+            'address' => '254 Cầu Giấy, Quận Cầu Giấy, Hà Nội',
+            'note' => 'Đóng gói hộp quà tặng kèm thiệp sinh nhật',
+            'payment_method' => 'COD',
+            'coupon_code' => null,
+            'discount_amount' => 0,
+            'total_amount' => 2790000,
+            'status' => 'PENDING',
+        ]);
+        OrderItem::create([
+            'order_id' => $order3->id,
+            'product_id' => $createdProducts[11]->id,
+            'quantity' => 1,
+            'price' => 2790000,
         ]);
     }
 }

@@ -58,6 +58,11 @@ class Product extends Model
         return $this->sale_price ?? $this->price;
     }
 
+    public function getFinalPriceAttribute(): int
+    {
+        return $this->sale_price ?? $this->price;
+    }
+
     public function getFirstImageAttribute(): string
     {
         $imgs = $this->images;

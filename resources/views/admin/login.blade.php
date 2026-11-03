@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập Kênh Chủ Shop | Lumina Beauty Back-Office</title>
+    <title>Đăng Nhập Quản Trị Viên Shop | Lumina Beauty Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,12 +21,21 @@
         }
     </script>
 </head>
-<body class="font-sans antialiased min-h-screen bg-stone-950 text-stone-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden">
-    <!-- Subtle Luxury Background Glow -->
+<body class="font-sans antialiased min-h-screen bg-stone-950 text-stone-100 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-x-hidden">
     <div class="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-rose-500/15 blur-3xl pointer-events-none"></div>
     <div class="fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
 
-    <div class="max-w-md w-full mx-auto space-y-6 relative z-10">
+    <div class="max-w-lg w-full mx-auto space-y-6 relative z-10">
+        <!-- Top Portal Switcher -->
+        <div class="bg-stone-900/90 border border-stone-800 rounded-2xl p-3 flex items-center justify-between gap-2 text-xs">
+            <span class="px-3 py-1.5 rounded-xl font-bold bg-rose-500 text-white">
+                🔐 Trang 2: Quản Trị Viên Shop (/admin/login)
+            </span>
+            <a href="{{ route('customer.login') }}" class="text-rose-300 hover:text-white font-semibold px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 transition">
+                👤 Sang Trang 1: Khách Hàng (/login) →
+            </a>
+        </div>
+
         <!-- Brand Header -->
         <div class="text-center space-y-2">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2.5 group">
@@ -38,19 +47,18 @@
                         Lumina <span class="text-rose-400 font-normal italic">Admin</span>
                     </span>
                     <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 -mt-1">
-                        Shop Owner Back-Office
+                        Shop Administrator Portal
                     </p>
                 </div>
             </a>
-            <h1 class="font-serif text-2xl font-bold text-white pt-3">
-                Cổng Quản Trị Dành Cho Chủ Shop
+            <h1 class="font-serif text-2xl font-bold text-white pt-2">
+                Đăng Nhập Quản Trị Viên Của Shop
             </h1>
             <p class="text-xs text-stone-400">
-                Quản lý doanh thu, duyệt đơn hàng, kho mỹ phẩm & phát hành mã giảm giá
+                Tra cứu đơn hàng, thêm/sửa/xóa sản phẩm & thống kê bán chạy, tồn kho, hết hàng
             </p>
         </div>
 
-        <!-- Flash / Error Alerts -->
         @if(session('error'))
             <div class="bg-red-500/15 border border-red-500/40 text-red-200 px-4 py-3 rounded-2xl text-xs font-medium">
                 ⚠ {{ session('error') }}
@@ -75,10 +83,10 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-stone-300 mb-2">
-                        Email Chủ Shop (Admin)
+                        Email hoặc Tên đăng nhập Quản trị viên
                     </label>
-                    <input type="email" id="email-input" name="email" value="{{ old('email', 'admin@luminabeauty.vn') }}" required autofocus
-                        placeholder="admin@luminabeauty.vn"
+                    <input type="text" id="email-input" name="email" value="{{ old('email', 'admin@luminabeauty.vn') }}" required autofocus
+                        placeholder="admin@luminabeauty.vn hoặc admin"
                         class="w-full px-4 py-3 text-sm rounded-2xl bg-stone-950 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-rose-500">
                 </div>
 
@@ -94,13 +102,13 @@
                 <div class="flex items-center justify-between text-xs text-stone-400">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="remember" checked class="rounded accent-rose-500">
-                        <span>Ghi nhớ phiên Chủ Shop</span>
+                        <span>Ghi nhớ phiên Quản trị viên</span>
                     </label>
-                    <span class="text-rose-400 font-medium">Bảo mật Laravel Auth</span>
+                    <span class="text-rose-400 font-medium">Bảo mật Role Admin</span>
                 </div>
 
                 <button type="submit" class="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg shadow-rose-500/25 transition text-sm">
-                    Đăng Nhập Vào Kênh Chủ Shop →
+                    Đăng Nhập Trang Quản Trị Viên (/admin) →
                 </button>
             </form>
 
@@ -108,7 +116,7 @@
             <div class="pt-4 border-t border-stone-800 space-y-3">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-rose-400">
-                        🔑 Tài khoản Chủ Shop đã khởi tạo sẵn
+                        🔑 Tài khoản Quản trị viên của Shop
                     </span>
                     <span class="text-[10px] bg-stone-800 text-stone-300 px-2 py-0.5 rounded-full">Click để điền nhanh</span>
                 </div>
@@ -117,7 +125,7 @@
                     <button type="button" onclick="fillAccount('admin@luminabeauty.vn', 'Admin@123456')"
                         class="w-full text-left p-3 rounded-2xl bg-stone-950/90 hover:bg-stone-800/80 border border-stone-800 hover:border-rose-500/40 transition flex items-center justify-between group">
                         <div>
-                            <p class="font-semibold text-stone-200 group-hover:text-rose-300">1. Tài khoản Admin Mặc định</p>
+                            <p class="font-semibold text-stone-200 group-hover:text-rose-300">1. Quản trị viên Mặc định (username: admin)</p>
                             <p class="font-mono text-[11px] text-stone-400">Email: <strong class="text-white">admin@luminabeauty.vn</strong> | Pass: <strong class="text-rose-400">Admin@123456</strong></p>
                         </div>
                         <span class="text-[11px] font-bold text-rose-400">Chọn →</span>
@@ -126,7 +134,7 @@
                     <button type="button" onclick="fillAccount('phongdev3979@gmail.com', 'Admin@123456')"
                         class="w-full text-left p-3 rounded-2xl bg-stone-950/90 hover:bg-stone-800/80 border border-stone-800 hover:border-rose-500/40 transition flex items-center justify-between group">
                         <div>
-                            <p class="font-semibold text-stone-200 group-hover:text-rose-300">2. Tài khoản Chủ Shop Nguyễn Phong</p>
+                            <p class="font-semibold text-stone-200 group-hover:text-rose-300">2. Chủ Shop Nguyễn Phong (username: nguyenphong2705)</p>
                             <p class="font-mono text-[11px] text-stone-400">Email: <strong class="text-white">phongdev3979@gmail.com</strong> | Pass: <strong class="text-rose-400">Admin@123456</strong></p>
                         </div>
                         <span class="text-[11px] font-bold text-rose-400">Chọn →</span>
@@ -135,10 +143,9 @@
             </div>
         </div>
 
-        <!-- Navigation Links -->
         <div class="flex items-center justify-between text-xs text-stone-400 px-2">
-            <a href="{{ route('home') }}" class="hover:text-white transition">← Về trang bán hàng</a>
-            <a href="{{ route('orders.track') }}" class="text-rose-400 hover:underline">Khách tra cứu đơn mua (/my-orders) →</a>
+            <a href="{{ route('home') }}" class="hover:text-white transition">← Về trang chủ cửa hàng</a>
+            <a href="{{ route('customer.login') }}" class="text-rose-400 hover:underline">Bạn là Khách mua hàng? Đăng nhập tại /login →</a>
         </div>
     </div>
 
