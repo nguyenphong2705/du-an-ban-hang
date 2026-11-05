@@ -26,6 +26,37 @@ class AdminController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->hasAny(['edit_product', 'stock_filter', 'category_filter', 'product_search'])) {
+            return $this->renderAdminPage($request, 'products');
+        }
+        if ($request->hasAny(['order_search', 'order_status'])) {
+            return $this->renderAdminPage($request, 'orders');
+        }
+        return $this->renderAdminPage($request, 'analytics');
+    }
+
+    public function analytics(Request $request)
+    {
+        return $this->renderAdminPage($request, 'analytics');
+    }
+
+    public function orders(Request $request)
+    {
+        return $this->renderAdminPage($request, 'orders');
+    }
+
+    public function products(Request $request)
+    {
+        return $this->renderAdminPage($request, 'products');
+    }
+
+    public function coupons(Request $request)
+    {
+        return $this->renderAdminPage($request, 'coupons');
+    }
+
+    private function renderAdminPage(Request $request, string $activePage)
+    {
         if ($redirect = $this->authorizeShopOwner()) {
             return $redirect;
         }
@@ -123,6 +154,7 @@ class AdminController extends Controller
         ];
 
         return view('admin.index', compact(
+            'activePage',
             'orders',
             'allOrders',
             'products',
@@ -143,6 +175,148 @@ class AdminController extends Controller
         ));
     }
 
+    public function filterProductsApi(Request $request)
+    {
+        if (!Auth::check() || !Auth::user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'category_filter' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if ($value !== 'ALL' && (!ctype_digit((string) $value) || !Category::where('id', (int) $value)->exists())) {
+                    $fail('Giá trị category_filter không hợp lệ.');
+                }
+            }],
+            'stock_filter' => ['nullable', 'string', 'in:ALL,BEST_SELLER,OUT_OF_STOCK,LOW_STOCK,IN_STOCK'],
+            'product_search' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $categoryFilter = $validated['category_filter'] ?? 'ALL';
+        $stockFilter = $validated['stock_filter'] ?? 'ALL';
+        $productSearch = trim($validated['product_search'] ?? '');
+
+        $allProducts = Product::with(['category', 'brand', 'orderItems'])->latest()->get();
+        foreach ($allProducts as $prod) {
+            $prod->sold_quantity = (int) $prod->orderItems->sum('quantity');
+            $prod->sold_revenue = (int) $prod->orderItems->sum(fn ($oi) => $oi->quantity * $oi->price);
+        }
+
+        $filtered = $allProducts->filter(function ($product) use ($productSearch, $stockFilter, $categoryFilter) {
+            if ($categoryFilter !== 'ALL' && (string) $product->category_id !== (string) $categoryFilter) {
+                return false;
+            }
+            if ($stockFilter === 'BEST_SELLER' && !$product->is_best_seller) {
+                return false;
+            }
+            if ($stockFilter === 'OUT_OF_STOCK' && $product->stock > 0) {
+                return false;
+            }
+            if ($stockFilter === 'LOW_STOCK' && ($product->stock <= 0 || $product->stock > 15)) {
+                return false;
+            }
+            if ($stockFilter === 'IN_STOCK' && $product->stock <= 15) {
+                return false;
+            }
+            if ($productSearch !== '') {
+                $kw = mb_strtolower($productSearch);
+                return str_contains(mb_strtolower($product->sku ?? ''), $kw)
+                    || str_contains(mb_strtolower($product->name), $kw)
+                    || str_contains(mb_strtolower($product->brand->name ?? ''), $kw)
+                    || str_contains(mb_strtolower($product->skin_type ?? ''), $kw);
+            }
+            return true;
+        })->values();
+
+        return response()->json([
+            'filters' => [
+                'category_filter' => $categoryFilter,
+                'stock_filter' => $stockFilter,
+                'product_search' => $productSearch,
+            ],
+            'total_count' => $allProducts->count(),
+            'filtered_count' => $filtered->count(),
+            'data' => $filtered->map(fn (Product $p) => [
+                'id' => $p->id,
+                'sku' => $p->product_code,
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'price' => $p->price,
+                'sale_price' => $p->sale_price,
+                'final_price' => $p->final_price,
+                'stock' => $p->stock,
+                'volume' => $p->volume,
+                'skin_type' => $p->skin_type,
+                'is_best_seller' => $p->is_best_seller,
+                'sold_quantity' => $p->sold_quantity ?? 0,
+                'image' => $p->first_image,
+                'category_id' => $p->category_id,
+                'category_name' => $p->category->name ?? '',
+                'brand_id' => $p->brand_id,
+                'brand_name' => $p->brand->name ?? '',
+            ]),
+        ]);
+    }
+
+    private function handleProductImageUpload(Request $request): ?string
+    {
+        if (!$request->hasFile('image_file')) {
+            return null;
+        }
+
+        $file = $request->file('image_file');
+        $uploadDir = public_path('uploads/products');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = 'product-' . time() . '-' . Str::random(6) . '.' . $ext;
+        $file->move($uploadDir, $filename);
+
+        return '/uploads/products/' . $filename;
+    }
+
+    public function uploadEditorImage(Request $request)
+    {
+        if (!Auth::check() || !Auth::user()->is_admin) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
+        ]);
+
+        $file = $request->file('image');
+        $uploadDir = public_path('uploads/products');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = 'desc-' . time() . '-' . Str::random(6) . '.' . $ext;
+        $file->move($uploadDir, $filename);
+
+        return response()->json([
+            'url' => '/uploads/products/' . $filename,
+        ]);
+    }
+
+    private function deleteLocalProductImages(?array $images): void
+    {
+        if (!is_array($images)) {
+            return;
+        }
+
+        foreach ($images as $img) {
+            if (is_string($img) && str_starts_with($img, '/uploads/products/')) {
+                $fullPath = public_path(ltrim($img, '/'));
+                if (is_file($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+        }
+    }
+
     public function storeProduct(Request $request)
     {
         if ($redirect = $this->authorizeShopOwner()) {
@@ -159,7 +333,7 @@ class AdminController extends Controller
             'skin_type' => 'required|string|max:100',
             'volume' => 'required|string|max:100',
             'stock' => 'nullable|integer|min:0',
-            'image' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
             'ingredients' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
@@ -169,6 +343,8 @@ class AdminController extends Controller
         $sku = !empty($validated['sku'])
             ? strtoupper(trim($validated['sku']))
             : ('LMN-SP' . str_pad((string) $nextId, 3, '0', STR_PAD_LEFT));
+
+        $uploadedPath = $this->handleProductImageUpload($request);
 
         Product::create([
             'sku' => $sku,
@@ -182,15 +358,15 @@ class AdminController extends Controller
             'volume' => $validated['volume'],
             'stock' => isset($validated['stock']) ? (int) $validated['stock'] : 20,
             'images' => [
-                $validated['image'] ?? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=80',
+                $uploadedPath ?? 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=80',
             ],
             'ingredients' => $validated['ingredients'] ?? 'Aqua, Niacinamide 10%, Hyaluronic Acid, Panthenol (Vitamin B5), Tocopherol.',
-            'description' => $validated['description'] ?? 'Sản phẩm mỹ phẩm chính hãng cao cấp phân phối tại Lumina Beauty.',
+            'description' => $validated['description'] ?? 'Sản phẩm mỹ phẩm chính hãng cao cấp phân phối tại Shine Beauty.',
             'is_best_seller' => $request->has('is_best_seller'),
         ]);
 
-        return redirect()->route('admin.index')
-            ->with('success', "Đã thêm sản phẩm mới [{$sku}] với tồn kho 20 SP thành công!");
+        return redirect()->route('admin.products.index')
+            ->with('success', "Đã thêm sản phẩm mới [{$sku}] thành công!");
     }
 
     public function updateProduct(Request $request, Product $product)
@@ -209,14 +385,21 @@ class AdminController extends Controller
             'skin_type' => 'required|string|max:100',
             'volume' => 'required|string|max:100',
             'stock' => 'nullable|integer|min:0',
-            'image' => 'nullable|url',
+            'image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:5120',
+            'remove_image' => 'nullable|boolean',
             'ingredients' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
 
         $images = $product->images;
-        if (!empty($validated['image'])) {
-            $images = [$validated['image']];
+        $uploadedPath = $this->handleProductImageUpload($request);
+
+        if ($uploadedPath) {
+            $this->deleteLocalProductImages($product->images);
+            $images = [$uploadedPath];
+        } elseif ($request->boolean('remove_image')) {
+            $this->deleteLocalProductImages($product->images);
+            $images = ['https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=900&q=80'];
         }
 
         $product->update([
@@ -235,7 +418,7 @@ class AdminController extends Controller
             'is_best_seller' => $request->has('is_best_seller'),
         ]);
 
-        return redirect()->route('admin.index')
+        return redirect()->route('admin.products.index')
             ->with('success', "Đã cập nhật sản phẩm [{$product->product_code}] \"{$product->name}\" thành công!");
     }
 
@@ -289,6 +472,7 @@ class AdminController extends Controller
         }
 
         $name = $product->name;
+        $this->deleteLocalProductImages($product->images);
         $product->delete();
 
         return back()->with('success', "Đã xóa sản phẩm \"{$name}\" khỏi hệ thống.");

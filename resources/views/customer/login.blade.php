@@ -1,140 +1,49 @@
 @extends('layouts.app')
 
-@section('title', 'Đăng Nhập Tài Khoản Khách Hàng | Lumina Beauty')
+@section('title', 'Đăng Nhập Tài Khoản Khách Hàng | Shine Beauty')
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- Top Customer Portal Banner -->
-    <div class="mb-8 bg-white rounded-3xl border border-rose-100 p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-500 text-white shadow-xs">
-                👤 Cổng Đăng Nhập Khách Hàng
-            </span>
-            <span class="text-xs text-stone-500 hidden sm:inline">
-                Theo dõi đơn hàng, giỏ hàng đã lưu trước đây & kho voucher ưu đãi
-            </span>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <div class="bg-white rounded-3xl border border-sage-100 p-8 sm:p-10 shadow-sm text-center space-y-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-sage-50 text-sage-600 border border-sage-200">
+            👤 Cổng Đăng Nhập Khách Hàng
         </div>
-    </div>
+        <h1 class="font-serif text-3xl font-bold text-stone-800">Thành Viên Shine Beauty</h1>
+        <p class="text-sm text-stone-500 max-w-xl mx-auto">
+            Theo dõi lịch sử đơn hàng, đồng bộ giỏ hàng tự động và sử dụng kho mã giảm giá ưu đãi độc quyền của shop.
+        </p>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <!-- Left Column: Login Form & Sample Account Box -->
-        <div class="lg:col-span-7 bg-white rounded-3xl border border-rose-100 p-7 sm:p-9 shadow-sm space-y-6">
-            <div class="space-y-1.5 border-b border-rose-100 pb-4">
-                <span class="text-xs font-bold uppercase tracking-widest text-rose-500">Thành Viên Lumina Beauty</span>
-                <h1 class="font-serif text-3xl font-bold text-stone-800">Đăng Nhập Khách Hàng</h1>
-                <p class="text-xs text-stone-500">
-                    Đăng nhập bằng <strong>Tên đăng nhập</strong> hoặc <strong>Email</strong> để xem đơn hàng, giỏ hàng đã lưu và mã giảm giá của shop.
-                </p>
-            </div>
-
-            @if($errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-xs font-medium">
-                    ⚠ {{ $errors->first() }}
-                </div>
-            @endif
-
-            <form action="{{ route('customer.login.submit') }}" method="POST" class="space-y-4">
-                @csrf
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
-                        Tên đăng nhập hoặc Email *
-                    </label>
-                    <input type="text" id="cust-login" name="login" required value="{{ old('login', 'tuyenthanhthanh3979') }}"
-                        placeholder="Nhập tuyenthanhthanh3979 hoặc tuyenthanhthanh3979@gmail.com"
-                        class="w-full px-4 py-3 text-sm rounded-2xl border border-rose-200 bg-[#FDFBF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">
-                        Mật khẩu *
-                    </label>
-                    <input type="password" id="cust-password" name="password" required value="Phong2705@@"
-                        placeholder="••••••••••••"
-                        class="w-full px-4 py-3 text-sm rounded-2xl border border-rose-200 bg-[#FDFBF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400">
-                </div>
-
-                <div class="flex items-center justify-between text-xs text-stone-500">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="remember" checked class="rounded accent-rose-500">
-                        <span>Tự động lưu giỏ hàng & phiên đăng nhập</span>
-                    </label>
-                    <span class="text-rose-500 font-medium">Đồng bộ PostgreSQL</span>
-                </div>
-
-                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-rose-200 transition text-sm">
-                    Đăng Nhập Vào Tài Khoản Khách Hàng →
-                </button>
-            </form>
-
-            <!-- Quick Autofill Sample Customer Account -->
-            <div class="pt-4 border-t border-rose-100 space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold uppercase tracking-wider text-rose-600">
-                        🎁 Tài khoản Khách hàng Mẫu (Đã nạp sẵn Đơn hàng & Giỏ hàng cũ)
-                    </span>
-                    <span class="text-[11px] bg-rose-50 text-rose-600 px-2.5 py-0.5 rounded-full font-semibold">Click để điền</span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <button type="button" onclick="fillCustomer('tuyenthanhthanh3979', 'Phong2705@@')"
-                        class="text-left p-3.5 rounded-2xl bg-[#FDFBF7] hover:bg-rose-50/70 border border-rose-200 transition space-y-1">
-                        <p class="font-bold text-stone-800">Cách 1: Đăng nhập bằng Username</p>
-                        <p class="font-mono text-[11px] text-stone-600">User: <strong class="text-rose-600">tuyenthanhthanh3979</strong></p>
-                        <p class="font-mono text-[11px] text-stone-600">Pass: <strong class="text-rose-600">Phong2705@@</strong></p>
-                    </button>
-
-                    <button type="button" onclick="fillCustomer('tuyenthanhthanh3979@gmail.com', 'Phong2705@@')"
-                        class="text-left p-3.5 rounded-2xl bg-[#FDFBF7] hover:bg-rose-50/70 border border-rose-200 transition space-y-1">
-                        <p class="font-bold text-stone-800">Cách 2: Đăng nhập bằng Email</p>
-                        <p class="font-mono text-[11px] text-stone-600">Email: <strong class="text-rose-600">tuyenthanhthanh3979@gmail.com</strong></p>
-                        <p class="font-mono text-[11px] text-stone-600">Pass: <strong class="text-rose-600">Phong2705@@</strong></p>
-                    </button>
-                </div>
-            </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <button type="button" onclick="openAuthModal('login')" class="w-60 inline-flex items-center justify-center bg-sage-500 hover:bg-sage-600 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-md shadow-sage-200 transition text-sm cursor-pointer">
+                🔑 Mở Popup Đăng Nhập
+            </button>
+            <button type="button" onclick="openAuthModal('register')" class="w-60 inline-flex items-center justify-center bg-stone-900 hover:bg-sage-600 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-md transition text-sm cursor-pointer">
+                ✨ Mở Popup Đăng Ký Mới
+            </button>
         </div>
 
-        <!-- Right Column: Benefits & Quick Registration -->
-        <div class="lg:col-span-5 space-y-6">
-            <div class="bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-3xl p-7 shadow-md space-y-4">
-                <span class="text-[11px] font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
-                    Đặc Quyền Tài Khoản Khách Hàng
-                </span>
-                <h2 class="font-serif text-2xl font-bold">Tiện Ích Khi Đăng Nhập</h2>
-                <ul class="space-y-2.5 text-xs text-rose-50 leading-relaxed">
-                    <li>✓ <strong>Theo dõi đơn hàng:</strong> Xem lịch sử đặt hàng, trạng thái vận chuyển (`Chờ xác nhận`, `Đang giao`, `Hoàn thành`) và chi tiết mỹ phẩm đã mua.</li>
-                    <li>✓ <strong>Lưu giữ giỏ hàng tự động:</strong> Các sản phẩm đã thêm vào giỏ hàng trước đây được lưu vào cơ sở dữ liệu PostgreSQL, không bị mất khi tắt trình duyệt.</li>
-                    <li>✓ <strong>Ví Voucher độc quyền:</strong> Theo dõi tất cả mã giảm giá hiện có của shop (`LUMINA20`, `FLASHSALE30`, `SKINCARE15`, `NEWMEMBER10`) và bấm áp dụng chỉ với 1 click.</li>
-                </ul>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 text-left border-t border-sage-100">
+            <div class="p-4 rounded-2xl bg-[#F5FAF7] border border-sage-100 space-y-1">
+                <p class="text-xs font-bold text-sage-600">✓ Theo dõi đơn hàng</p>
+                <p class="text-xs text-stone-500">Xem lịch sử đặt hàng và trạng thái vận chuyển chi tiết theo thời gian thực.</p>
             </div>
-
-            <!-- Form Đăng ký nhanh cho khách mới -->
-            <div class="bg-white rounded-3xl border border-rose-100 p-6 shadow-xs space-y-4">
-                <h3 class="font-serif text-lg font-bold text-stone-800">Chưa có tài khoản? Đăng ký mới</h3>
-                <form action="{{ route('customer.register') }}" method="POST" class="space-y-3 text-xs">
-                    @csrf
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <input type="text" name="name" required placeholder="Họ và tên *" class="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                        <input type="text" name="username" required placeholder="Tên đăng nhập *" class="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <input type="email" name="email" required placeholder="Email *" class="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                        <input type="text" name="phone" required placeholder="Số điện thoại *" class="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                    </div>
-                    <input type="text" name="address" placeholder="Địa chỉ nhận hàng mặc định" class="w-full px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                    <input type="password" name="password" required placeholder="Mật khẩu (tối thiểu 6 ký tự) *" class="w-full px-3.5 py-2.5 rounded-xl border border-rose-200 bg-[#FDFBF7]">
-                    <button type="submit" class="w-full bg-stone-900 hover:bg-rose-600 text-white font-semibold py-2.5 rounded-xl transition">
-                        Tạo Tài Khoản Khách Hàng Mới
-                    </button>
-                </form>
+            <div class="p-4 rounded-2xl bg-[#F5FAF7] border border-sage-100 space-y-1">
+                <p class="text-xs font-bold text-sage-600">✓ Giỏ hàng thông minh</p>
+                <p class="text-xs text-stone-500">Tự động lưu trữ và khôi phục giỏ hàng khi đăng nhập lại.</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-[#F5FAF7] border border-sage-100 space-y-1">
+                <p class="text-xs font-bold text-sage-600">✓ Ưu đãi độc quyền</p>
+                <p class="text-xs text-stone-500">Nhanh chóng áp dụng các mã giảm giá dành riêng cho thành viên như LUMINA20, FLASHSALE30.</p>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function fillCustomer(login, pass) {
-        document.getElementById('cust-login').value = login;
-        document.getElementById('cust-password').value = pass;
-    }
+    document.addEventListener('DOMContentLoaded', function () {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab') === 'register' ? 'register' : @json(old('auth_tab', 'login'));
+        openAuthModal(tab);
+    });
 </script>
 @endsection

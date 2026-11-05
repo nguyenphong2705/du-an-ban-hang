@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class CustomerAuthController extends Controller
 {
@@ -49,7 +51,7 @@ class CustomerAuthController extends Controller
 
         return back()->withErrors([
             'login' => 'Tên đăng nhập / Email hoặc mật khẩu không chính xác.',
-        ])->onlyInput('login');
+        ])->onlyInput('login', 'auth_tab');
     }
 
     public function register(Request $request)
@@ -90,6 +92,116 @@ class CustomerAuthController extends Controller
 
         return redirect()->route('customer.login')
             ->with('success', 'Đã đăng xuất khỏi tài khoản khách hàng.');
+    }
+
+    public function showForgotPassword()
+    {
+        $resetState = session('password_reset_otp');
+        return view('customer.forgot-password', compact('resetState'));
+    }
+
+    public function sendResetCode(Request $request)
+    {
+        $validated = $request->validate([
+            'identifier' => ['required', 'string', 'max:255'],
+            'channel' => ['nullable', 'in:both,email,phone'],
+        ]);
+
+        $identifier = trim($validated['identifier']);
+        $channel = $validated['channel'] ?? 'both';
+
+        $user = User::where('is_admin', false)
+            ->where(function ($q) use ($identifier) {
+                $q->where('email', $identifier)
+                    ->orWhere('phone', $identifier)
+                    ->orWhere('username', $identifier);
+            })
+            ->first();
+
+        if (!$user) {
+            return back()->withErrors([
+                'identifier' => 'Không tìm thấy tài khoản khách hàng với Email, Số điện thoại hoặc Tên đăng nhập này.',
+            ])->withInput();
+        }
+
+        $otpCode = (string) rand(100000, 999999);
+
+        // Gửi mã xác thực qua Email (Laravel Mailer) & ghi log SMS Gateway
+        if (in_array($channel, ['both', 'email'], true) && !empty($user->email)) {
+            try {
+                Mail::raw(
+                    "Xin chào {$user->name},\n\nMã xác thực đặt lại mật khẩu Shine Beauty của bạn là: {$otpCode}\nMã có hiệu lực trong 10 phút.\n\nTrân trọng,\nShine Beauty",
+                    function ($message) use ($user) {
+                        $message->to($user->email)
+                            ->subject('[Shine Beauty] Mã xác thực khôi phục mật khẩu');
+                    }
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Send reset email failed: ' . $e->getMessage());
+            }
+        }
+
+        if (in_array($channel, ['both', 'phone'], true) && !empty($user->phone)) {
+            Log::info("[SMS OTP Shine Beauty] Gửi tới SĐT {$user->phone}: Mã khôi phục mật khẩu là {$otpCode}");
+        }
+
+        session([
+            'password_reset_otp' => [
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'channel' => $channel,
+                'code' => $otpCode,
+                'expires_at' => now()->addMinutes(10)->timestamp,
+            ],
+        ]);
+
+        return redirect()->route('customer.password.request')
+            ->with('otp_sent', "Đã gửi mã xác thực 6 số về Email ({$user->email}) và Số điện thoại ({$user->phone}) của bạn!");
+    }
+
+    public function resetPasswordWithCode(Request $request)
+    {
+        $validated = $request->validate([
+            'otp_code' => ['required', 'string', 'size:6'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'otp_code.required' => 'Vui lòng nhập mã xác thực 6 chữ số.',
+            'otp_code.size' => 'Mã xác thực gồm đúng 6 chữ số.',
+            'password.min' => 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+            'password.confirmed' => 'Xác nhận mật khẩu mới không khớp.',
+        ]);
+
+        $resetState = session('password_reset_otp');
+
+        if (!$resetState || now()->timestamp > ($resetState['expires_at'] ?? 0)) {
+            session()->forget('password_reset_otp');
+            return redirect()->route('customer.password.request')
+                ->withErrors(['otp_code' => 'Mã xác thực đã hết hạn hoặc không tồn tại. Vui lòng yêu cầu gửi lại mã mới.']);
+        }
+
+        if (trim($validated['otp_code']) !== (string) $resetState['code']) {
+            return back()->withErrors([
+                'otp_code' => 'Mã xác thực không chính xác. Vui lòng kiểm tra lại tin nhắn SMS hoặc Email.',
+            ]);
+        }
+
+        $user = User::where('is_admin', false)->find($resetState['user_id']);
+        if (!$user) {
+            session()->forget('password_reset_otp');
+            return redirect()->route('customer.password.request')
+                ->withErrors(['identifier' => 'Tài khoản không tồn tại.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        session()->forget('password_reset_otp');
+
+        return redirect()->route('customer.login')
+            ->with('success', "Đã tạo mật khẩu mới thành công cho tài khoản {$user->username}! Vui lòng đăng nhập.");
     }
 
     public function account(Request $request)

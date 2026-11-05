@@ -51,7 +51,7 @@ class CartController extends Controller
                 'image' => $product->first_image,
                 'volume' => $product->volume,
                 'skin_type' => $product->skin_type,
-                'brand_name' => $product->brand?->name ?? 'Lumina',
+                'brand_name' => $product->brand?->name ?? 'Shine',
                 'stock' => $product->stock,
                 'quantity' => $ci->quantity,
                 'saved_at' => $ci->updated_at?->format('d/m/Y H:i'),
@@ -88,7 +88,7 @@ class CartController extends Controller
                 'image' => $product->first_image,
                 'volume' => $product->volume,
                 'skin_type' => $product->skin_type,
-                'brand_name' => $product->brand?->name ?? 'Lumina',
+                'brand_name' => $product->brand?->name ?? 'Shine',
                 'stock' => $product->stock,
                 'quantity' => $quantity,
             ];

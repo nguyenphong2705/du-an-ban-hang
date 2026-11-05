@@ -5,15 +5,15 @@
         : null;
 @endphp
 
-<div class="group bg-white rounded-3xl border border-rose-100/90 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-rose-100/60 transition-all duration-300 flex flex-col justify-between">
+<div class="group bg-white rounded-3xl border border-sage-100/90 overflow-hidden shadow-xs hover:shadow-xl hover:shadow-sage-100/60 transition-all duration-300 flex flex-col justify-between">
     <div>
         <!-- Image Wrapper -->
-        <a href="{{ route('products.show', $product->slug) }}" class="block relative aspect-square overflow-hidden bg-rose-50/50">
+        <a href="{{ route('products.show', $product->slug) }}" class="block relative aspect-square overflow-hidden bg-sage-50/50">
             <img src="{{ $product->first_image }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
 
             <div class="absolute top-3 left-3 flex flex-col gap-1.5">
                 @if($product->is_best_seller)
-                    <span class="inline-flex items-center gap-1 bg-rose-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-xs">
+                    <span class="inline-flex items-center gap-1 bg-sage-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-xs">
                         ✦ Best Seller
                     </span>
                 @endif
@@ -24,7 +24,7 @@
                 @endif
             </div>
 
-            <span class="absolute bottom-3 left-3 bg-white/90 text-rose-700 text-[11px] font-medium px-3 py-1 rounded-full border border-rose-100 shadow-2xs">
+            <span class="absolute bottom-3 left-3 bg-white/90 text-sage-700 text-[11px] font-medium px-3 py-1 rounded-full border border-sage-100 shadow-2xs">
                 {{ $product->skin_type }}
             </span>
         </a>
@@ -36,14 +36,14 @@
                     <span class="font-mono font-bold text-[10px] bg-stone-900 text-white px-2 py-0.5 rounded-md">
                         {{ $product->product_code }}
                     </span>
-                    <span class="font-semibold uppercase tracking-wider text-rose-500">
-                        {{ $product->brand->name ?? 'Lumina' }}
+                    <span class="font-semibold uppercase tracking-wider text-sage-500">
+                        {{ $product->brand->name ?? 'Shine' }}
                     </span>
                 </div>
                 <span>{{ $product->volume }}</span>
             </div>
 
-            <a href="{{ route('products.show', $product->slug) }}" class="font-serif font-bold text-stone-800 group-hover:text-rose-600 transition line-clamp-2 text-base leading-snug min-h-[2.75rem] block">
+            <a href="{{ route('products.show', $product->slug) }}" class="font-serif font-bold text-stone-800 group-hover:text-sage-600 transition line-clamp-2 text-base leading-snug min-h-[2.75rem] block">
                 {{ $product->name }}
             </a>
 
@@ -57,9 +57,9 @@
     </div>
 
     <!-- Price & Add to Cart -->
-    <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-rose-50">
+    <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-sage-50">
         <div>
-            <div class="text-lg font-bold text-rose-600">
+            <div class="text-lg font-bold text-sage-600">
                 {{ number_format($finalPrice, 0, ',', '.') }}₫
             </div>
             @if($product->sale_price && $product->sale_price < $product->price)
@@ -73,7 +73,7 @@
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
             <input type="hidden" name="quantity" value="1">
-            <button type="submit" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-500 text-rose-700 hover:text-white font-medium text-xs px-3.5 py-2.5 rounded-full transition-colors duration-200 border border-rose-200/70">
+            <button type="submit" class="inline-flex items-center gap-1.5 bg-sage-50 hover:bg-sage-500 text-sage-700 hover:text-white font-medium text-xs px-3.5 py-2.5 rounded-full transition-colors duration-200 border border-sage-200/70">
                 <span>+ Thêm giỏ</span>
             </button>
         </form>
