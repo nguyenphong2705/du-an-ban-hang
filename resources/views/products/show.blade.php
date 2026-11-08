@@ -28,9 +28,13 @@
         <!-- Gallery -->
         <div class="lg:col-span-6 space-y-4">
             <div class="relative aspect-square rounded-3xl overflow-hidden bg-white border border-sage-100 shadow-sm">
-                <img id="main-product-image" src="{{ $product->first_image }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                <img id="main-product-image"
+                     src="{{ $product->first_image }}"
+                     onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=900&q=80';"
+                     alt="{{ $product->name }}"
+                     class="w-full h-full object-cover">
                 @if($discountPercent)
-                    <span class="absolute top-4 left-4 bg-sage-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-full">
+                    <span class="absolute top-4 left-4 bg-wine-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md border border-wine-600">
                         Tiết kiệm {{ $discountPercent }}%
                     </span>
                 @endif
@@ -40,7 +44,10 @@
                 <div class="flex gap-3">
                     @foreach($product->images as $img)
                         <button type="button" onclick="document.getElementById('main-product-image').src='{{ $img }}'" class="w-20 h-20 rounded-2xl overflow-hidden border-2 border-sage-200 hover:border-sage-500 transition">
-                            <img src="{{ $img }}" alt="Thumbnail" class="w-full h-full object-cover">
+                            <img src="{{ $img }}"
+                                 onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=900&q=80';"
+                                 alt="Thumbnail"
+                                 class="w-full h-full object-cover">
                         </button>
                     @endforeach
                 </div>

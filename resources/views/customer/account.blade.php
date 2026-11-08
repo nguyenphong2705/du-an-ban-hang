@@ -160,46 +160,71 @@
             @endif
         </section>
 
-        <!-- Shop Vouchers for Customer Account -->
-        <section id="section-vouchers" class="lg:col-span-5 bg-white rounded-3xl border border-sage-100 p-6 sm:p-8 shadow-xs space-y-5">
-            <div class="border-b border-sage-100 pb-4">
-                <span class="text-xs font-bold uppercase tracking-widest text-sage-500">Ưu Đãi Dành Cho Tài Khoản Khách Hàng</span>
-                <h2 class="font-serif text-2xl font-bold text-stone-800">
+        <!-- Shop Vouchers for Customer Account (Wine Red Tone) -->
+        <section id="section-vouchers" class="lg:col-span-5 bg-gradient-to-br from-wine-50 via-[#FFF7F8] to-wine-100/60 rounded-3xl border border-wine-200 p-6 sm:p-8 shadow-xs space-y-5">
+            <div class="border-b border-wine-200/80 pb-4">
+                <span class="text-xs font-bold uppercase tracking-widest text-wine-700">Ưu Đãi Dành Cho Tài Khoản Khách Hàng</span>
+                <h2 class="font-serif text-2xl font-bold text-wine-900">
                     🎟️ Kho Voucher Hiện Có ({{ $activeCoupons->count() }})
                 </h2>
-                <p class="text-xs text-stone-500 mt-1">Bấm "Áp dụng ngay" để gắn mã giảm giá trực tiếp vào đơn thanh toán của bạn</p>
+                <p class="text-xs text-wine-800/80 mt-1">
+                    Mỗi đơn hàng chỉ được áp dụng <strong>01 mã giảm giá duy nhất</strong> (không áp dụng đồng thời 2 voucher).
+                </p>
             </div>
 
             <div class="space-y-3">
                 @forelse($activeCoupons as $coupon)
-                    <div class="p-4 rounded-2xl border border-sage-200 bg-gradient-to-r from-sage-50/70 via-white to-sage-50/40 flex items-center justify-between gap-3 relative overflow-hidden">
+                    @php
+                        $isThisCouponApplied = !empty($appliedCoupon) && $appliedCoupon['code'] === $coupon->code;
+                        $hasAnotherCouponApplied = !empty($appliedCoupon) && $appliedCoupon['code'] !== $coupon->code;
+                    @endphp
+                    <div class="p-4 rounded-2xl border {{ $isThisCouponApplied ? 'border-wine-600 bg-wine-700 text-white shadow-md' : 'border-wine-200 bg-gradient-to-r from-white via-wine-50/70 to-wine-100/50' }} flex items-center justify-between gap-3 relative overflow-hidden">
                         <div class="space-y-1">
                             <div class="flex items-center gap-2">
-                                <span class="font-mono font-bold text-base text-sage-600 bg-sage-100/80 px-2.5 py-0.5 rounded-lg border border-sage-200">
+                                <span class="font-mono font-bold text-base {{ $isThisCouponApplied ? 'text-white bg-wine-800 border-wine-500' : 'text-wine-800 bg-wine-100 border-wine-300' }} px-2.5 py-0.5 rounded-lg border">
                                     {{ $coupon->code }}
                                 </span>
-                                <span class="text-xs font-bold bg-sage-500 text-white px-2.5 py-0.5 rounded-full">
+                                <span class="text-xs font-bold {{ $isThisCouponApplied ? 'bg-white text-wine-800' : 'bg-wine-700 text-white' }} px-2.5 py-0.5 rounded-full">
                                     Giảm {{ $coupon->discount_percent }}%
                                 </span>
                             </div>
-                            <p class="text-xs text-stone-700 font-medium">
+                            <p class="text-xs {{ $isThisCouponApplied ? 'text-wine-50' : 'text-stone-700' }} font-medium">
                                 {{ $coupon->description ?? "Giảm {$coupon->discount_percent}% cho mọi đơn hàng mỹ phẩm chính hãng" }}
                             </p>
-                            <p class="text-[11px] text-stone-400">
+                            <p class="text-[11px] {{ $isThisCouponApplied ? 'text-wine-200' : 'text-wine-700/75' }}">
                                 Đơn tối thiểu: {{ number_format($coupon->min_order_amount ?? 0, 0, ',', '.') }}₫ • HSD: {{ $coupon->expires_at?->format('d/m/Y') }}
                             </p>
                         </div>
 
-                        <form action="{{ route('customer.voucher.apply') }}" method="POST" class="flex-shrink-0">
-                            @csrf
-                            <input type="hidden" name="coupon_code" value="{{ $coupon->code }}">
-                            <button type="submit" class="bg-stone-900 hover:bg-sage-600 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-xs">
-                                {{ (!empty($appliedCoupon) && $appliedCoupon['code'] === $coupon->code) ? '✓ Đang dùng' : 'Áp dụng ngay' }}
+                        @if($isThisCouponApplied)
+                            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                                <span class="bg-white text-wine-800 text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs">
+                                    ✓ Đang dùng
+                                </span>
+                                <form action="{{ route('checkout.coupon.remove') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="text-[11px] text-wine-100 font-bold hover:underline">
+                                        Gỡ mã này
+                                    </button>
+                                </form>
+                            </div>
+                        @elseif($hasAnotherCouponApplied)
+                            <button type="button" disabled title="Mỗi đơn chỉ được áp dụng 1 voucher. Vui lòng gỡ mã {{ $appliedCoupon['code'] }} trước."
+                                class="flex-shrink-0 bg-wine-100/80 text-wine-400 border border-wine-200 text-xs font-semibold px-3.5 py-2 rounded-xl cursor-not-allowed">
+                                Đã dùng {{ $appliedCoupon['code'] }}
                             </button>
-                        </form>
+                        @else
+                            <form action="{{ route('customer.voucher.apply') }}" method="POST" class="flex-shrink-0">
+                                @csrf
+                                <input type="hidden" name="coupon_code" value="{{ $coupon->code }}">
+                                <button type="submit" class="bg-wine-700 hover:bg-wine-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-xs">
+                                    Áp dụng ngay
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 @empty
-                    <p class="text-xs text-stone-400 text-center py-8">Hiện shop chưa có mã giảm giá nào đang mở.</p>
+                    <p class="text-xs text-wine-700/70 text-center py-8">Hiện shop chưa có mã giảm giá nào đang mở.</p>
                 @endforelse
             </div>
         </section>
@@ -299,7 +324,7 @@
                             <div>
                                 <span>📍 Giao đến: <strong>{{ $order->address }}</strong> ({{ $order->phone }})</span>
                                 @if($order->coupon_code)
-                                    <span class="ml-2 inline-block bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                    <span class="ml-2 inline-block bg-wine-700 text-white font-semibold px-2.5 py-0.5 rounded-full border border-wine-600">
                                         🎟️ Voucher {{ $order->coupon_code }} (-{{ number_format($order->discount_amount, 0, ',', '.') }}₫)
                                     </span>
                                 @endif

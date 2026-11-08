@@ -271,11 +271,34 @@ class CustomerAuthController extends Controller
 
     public function applyVoucherToCart(Request $request)
     {
-        $code = strtoupper(trim($request->input('coupon_code', '')));
+        $code = strtoupper(trim((string) $request->input('coupon_code', '')));
+        $existingCoupon = session()->get('applied_coupon');
+
+        if (!empty($existingCoupon['code'])) {
+            if ($existingCoupon['code'] === $code) {
+                return redirect()->route('checkout.index')
+                    ->with('success', "Mã giảm giá {$code} đang được áp dụng trong giỏ hàng của bạn.");
+            }
+
+            return back()->with(
+                'error',
+                "Mỗi đơn hàng chỉ được áp dụng 01 mã giảm giá (hiện đang dùng mã {$existingCoupon['code']}). Vui lòng gỡ mã cũ trước khi áp dụng mã {$code}."
+            );
+        }
+
         $coupon = Coupon::where('code', $code)->where('is_active', true)->first();
 
         if (!$coupon || $coupon->isExpired()) {
             return back()->with('error', "Mã voucher {$code} không khả dụng.");
+        }
+
+        $cart = session()->get('cart', []);
+        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        if ($subtotal > 0 && $subtotal < ($coupon->min_order_amount ?? 0)) {
+            return back()->with(
+                'error',
+                "Mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%) yêu cầu giá trị đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . '₫.'
+            );
         }
 
         session()->put('applied_coupon', [

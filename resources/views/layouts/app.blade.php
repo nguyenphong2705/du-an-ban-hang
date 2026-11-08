@@ -44,6 +44,19 @@
                             700: '#19774C',
                             800: '#185E3F',
                             900: '#154E35',
+                        },
+                        wine: {
+                            50: '#FDF2F4',
+                            100: '#FCE4E8',
+                            200: '#F8C9D2',
+                            300: '#F19EAE',
+                            400: '#E56982',
+                            500: '#B8334C',
+                            600: '#8F243A',
+                            700: '#722F37',
+                            800: '#5E1924',
+                            900: '#4A121B',
+                            950: '#2D090F',
                         }
                     }
                 }
@@ -211,10 +224,45 @@
             </div>
 
             @if(count($cart) > 0)
-                <div class="p-6 bg-white border-t border-sage-100 space-y-4">
-                    <div class="flex items-center justify-between text-base font-bold">
-                        <span>Tạm tính:</span>
-                        <span class="text-sage-600 text-lg">{{ number_format($cartTotal, 0, ',', '.') }}₫</span>
+                @php
+                    $drawerShippingFee = $cartTotal < 500000 ? 30000 : 0;
+                    $drawerFreeShipDiff = max(0, 500000 - $cartTotal);
+                    $drawerProgressPercent = min(100, (int) round(($cartTotal / 500000) * 100));
+                @endphp
+                <div class="p-6 bg-white border-t border-sage-100 space-y-3.5">
+                    <div class="bg-[#F5FAF7] border border-sage-100 rounded-2xl p-3 space-y-1.5 text-xs">
+                        @if($drawerFreeShipDiff > 0)
+                            <p class="text-stone-600">
+                                🚚 Mua thêm <strong class="text-sage-600">{{ number_format($drawerFreeShipDiff, 0, ',', '.') }}₫</strong> để được <strong>Miễn phí vận chuyển toàn quốc</strong> (đơn từ 500.000₫)
+                            </p>
+                        @else
+                            <p class="text-emerald-700 font-semibold">
+                                ✨ Đơn hàng đủ điều kiện <strong>Miễn phí vận chuyển toàn quốc</strong>!
+                            </p>
+                        @endif
+                        <div class="w-full h-1.5 bg-sage-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-sage-500 rounded-full transition-all duration-300" style="width: {{ $drawerProgressPercent }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5 text-xs text-stone-500">
+                        <div class="flex items-center justify-between">
+                            <span>Tạm tính:</span>
+                            <span class="font-semibold text-stone-700">{{ number_format($cartTotal, 0, ',', '.') }}₫</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Phí vận chuyển toàn quốc:</span>
+                            @if($drawerShippingFee > 0)
+                                <span class="font-semibold text-amber-600">+{{ number_format($drawerShippingFee, 0, ',', '.') }}₫</span>
+                            @else
+                                <span class="font-semibold text-emerald-600">Miễn phí (0₫)</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-base font-bold pt-2 border-t border-sage-100">
+                        <span>Tổng dự kiến:</span>
+                        <span class="text-sage-600 text-lg">{{ number_format($cartTotal + $drawerShippingFee, 0, ',', '.') }}₫</span>
                     </div>
                     <a href="{{ route('checkout.index') }}" class="block w-full text-center bg-sage-500 hover:bg-sage-600 text-white font-semibold py-3.5 rounded-full shadow-md shadow-sage-200 transition">
                         Tiến Hành Thanh Toán →
@@ -243,7 +291,9 @@
                 <!-- Modal Header Banner -->
                 <div class="bg-gradient-to-r from-sage-500 to-sage-600 px-6 py-5 text-white flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <img src="{{ asset('logo.png') }}?v=2" alt="Shine Beauty Logo" class="w-13 h-13 object-contain drop-shadow-sm">
+                        <div class="w-12 h-12 rounded-2xl bg-white/95 p-1.5 shadow-sm flex items-center justify-center flex-shrink-0">
+                            <img src="{{ asset('logo.png') }}?v=3" alt="Shine Beauty Logo" width="40" height="40" class="w-10 h-10 object-contain">
+                        </div>
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-widest text-sage-100 block">Thành Viên Shine Beauty</span>
                             <h2 id="auth-modal-title" class="font-serif text-xl font-bold">

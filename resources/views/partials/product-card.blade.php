@@ -9,7 +9,10 @@
     <div>
         <!-- Image Wrapper -->
         <a href="{{ route('products.show', $product->slug) }}" class="block relative aspect-square overflow-hidden bg-sage-50/50">
-            <img src="{{ $product->first_image }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <img src="{{ $product->first_image }}"
+                 onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=900&q=80';"
+                 alt="{{ $product->name }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
 
             <div class="absolute top-3 left-3 flex flex-col gap-1.5">
                 @if($product->is_best_seller)
@@ -18,7 +21,7 @@
                     </span>
                 @endif
                 @if($discountPercent)
-                    <span class="inline-block bg-stone-900/80 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit">
+                    <span class="inline-block bg-wine-700 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit shadow-xs border border-wine-600">
                         -{{ $discountPercent }}%
                     </span>
                 @endif

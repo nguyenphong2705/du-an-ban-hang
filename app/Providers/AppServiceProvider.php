@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        try {
+            \App\Models\Product::ensureUnder500kProductsSeeded();
+        } catch (\Throwable) {
+            // Bỏ qua nếu bảng chưa được migrate
+        }
     }
 }

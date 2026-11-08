@@ -1,85 +1,123 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Models\CartItem;
+use App\Http\Requests\ApplyCouponRequest;
+use App\Http\Requests\StoreOrderRequest;
 use App\Models\Coupon;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
+use App\Services\CheckoutService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+use RuntimeException;
 
 class CheckoutController extends Controller
 {
-    public function index(Request $request)
-    {
-        $cart = session()->get('cart', []);
-        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+    public const FREE_SHIPPING_THRESHOLD = CheckoutService::FREE_SHIPPING_THRESHOLD;
+    public const STANDARD_SHIPPING_FEE = CheckoutService::STANDARD_SHIPPING_FEE;
 
-        $appliedCoupon = session()->get('applied_coupon');
-        $discountAmount = 0;
-
-        if ($appliedCoupon) {
-            $coupon = Coupon::where('code', $appliedCoupon['code'])
-                ->where('is_active', true)
-                ->first();
-            if ($coupon && !$coupon->isExpired()) {
-                $discountAmount = (int) round($subtotal * ($coupon->discount_percent / 100));
-            } else {
-                session()->forget('applied_coupon');
-                $appliedCoupon = null;
-            }
-        }
-
-        $totalAmount = max(0, $subtotal - $discountAmount);
-        $activeCoupons = Coupon::where('is_active', true)->get();
-
-        $successOrder = null;
-        if ($orderId = $request->query('success_order_id')) {
-            $successOrder = Order::with('items.product')->find($orderId);
-        }
-
-        return view('checkout.index', compact(
-            'cart',
-            'subtotal',
-            'discountAmount',
-            'totalAmount',
-            'appliedCoupon',
-            'activeCoupons',
-            'successOrder'
-        ));
+    public function __construct(
+        private readonly CheckoutService $checkoutService
+    ) {
     }
 
-    public function applyCoupon(Request $request)
+    public function index(Request $request): View
     {
-        $code = strtoupper(trim($request->input('coupon_code', '')));
-        if (!$code) {
+        $cart = session()->get('cart', []);
+        $appliedCouponSession = session()->get('applied_coupon');
+
+        $summary = $this->checkoutService->calculateCartSummary($cart, $appliedCouponSession);
+
+        // Nếu mã giảm giá trong session hết hạn hoặc không đủ điều kiện đơn tối thiểu thì tự động gỡ
+        if ($appliedCouponSession && $summary['appliedCoupon'] === null) {
             session()->forget('applied_coupon');
-            return back()->with('error', 'Vui lòng nhập mã giảm giá.');
         }
 
-        $coupon = Coupon::where('code', $code)->first();
-        if (!$coupon || !$coupon->is_active || $coupon->isExpired()) {
+        $activeCoupons = $this->checkoutService->getActiveCoupons();
+
+        // Chống IDOR: Chỉ cho phép xem đơn hàng vừa đặt trong phiên hiện tại hoặc của chính user đang đăng nhập
+        $successOrder = null;
+        if ($orderId = $request->integer('success_order_id')) {
+            $lastPhone = session('last_customer_phone');
+            $successOrder = Order::query()
+                ->with(['items.product:id,sku,name,slug,images'])
+                ->where('id', $orderId)
+                ->where(function ($query) use ($lastPhone): void {
+                    if (Auth::check()) {
+                        $query->where('user_id', Auth::id());
+                    }
+                    if (!empty($lastPhone)) {
+                        $query->orWhere('phone', $lastPhone);
+                    }
+                })
+                ->first();
+        }
+
+        return view('checkout.index', array_merge($summary, [
+            'cart' => $cart,
+            'activeCoupons' => $activeCoupons,
+            'successOrder' => $successOrder,
+        ]));
+    }
+
+    public function applyCoupon(ApplyCouponRequest $request): RedirectResponse
+    {
+        $code = $request->validated('coupon_code');
+        $existingCoupon = session()->get('applied_coupon');
+
+        // Chỉ cho phép áp dụng tối đa 01 voucher trên mỗi đơn hàng
+        if (!empty($existingCoupon['code'])) {
+            if ($existingCoupon['code'] === $code) {
+                return back()->with('error', "Mã giảm giá {$code} đang được áp dụng trên đơn hàng này.");
+            }
+
+            return back()->with(
+                'error',
+                "Mỗi đơn hàng chỉ được áp dụng tối đa 01 voucher (đang dùng mã {$existingCoupon['code']}). Vui lòng bấm \"Gỡ mã\" hiện tại nếu muốn đổi sang mã {$code}."
+            );
+        }
+
+        $coupon = Coupon::query()
+            ->where('code', $code)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$coupon || $coupon->isExpired()) {
             return back()->with('error', "Mã giảm giá \"{$code}\" không tồn tại hoặc đã hết hạn.");
+        }
+
+        $cart = session()->get('cart', []);
+        $subtotal = (int) collect($cart)->sum(
+            static fn (array $item): int => (int) $item['price'] * (int) $item['quantity']
+        );
+
+        if ($subtotal < (int) ($coupon->min_order_amount ?? 0)) {
+            return back()->with(
+                'error',
+                "Mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%) yêu cầu giá trị đơn hàng tối thiểu " . number_format((int) $coupon->min_order_amount, 0, ',', '.') . '₫.'
+            );
         }
 
         session()->put('applied_coupon', [
             'code' => $coupon->code,
-            'discount_percent' => $coupon->discount_percent,
+            'discount_percent' => (int) $coupon->discount_percent,
         ]);
 
-        return back()->with('success', "Đã áp dụng mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%)!");
+        return back()->with('success', "Đã áp dụng mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%)! (Mỗi đơn chỉ áp dụng 01 voucher)");
     }
 
-    public function removeCoupon()
+    public function removeCoupon(): RedirectResponse
     {
         session()->forget('applied_coupon');
+
         return back()->with('success', 'Đã gỡ mã giảm giá.');
     }
 
-    public function store(Request $request)
+    public function store(StoreOrderRequest $request): RedirectResponse
     {
         $cart = session()->get('cart', []);
         if (empty($cart)) {
@@ -87,81 +125,37 @@ class CheckoutController extends Controller
                 ->with('error', 'Giỏ hàng của bạn đang trống.');
         }
 
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:30',
-            'address' => 'required|string|max:500',
-            'note' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:COD,BANK_TRANSFER',
-        ]);
-
-        $subtotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
-        $appliedCoupon = session()->get('applied_coupon');
-        $couponCode = null;
-        $discountAmount = 0;
-
-        if ($appliedCoupon) {
-            $coupon = Coupon::where('code', $appliedCoupon['code'])
-                ->where('is_active', true)
-                ->first();
-            if ($coupon && !$coupon->isExpired()) {
-                $couponCode = $coupon->code;
-                $discountAmount = (int) round($subtotal * ($coupon->discount_percent / 100));
-            }
+        try {
+            $order = $this->checkoutService->placeOrder(
+                $request->validated(),
+                $cart,
+                session()->get('applied_coupon'),
+                Auth::id() ? (int) Auth::id() : null
+            );
+        } catch (RuntimeException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
         }
 
-        $totalAmount = max(0, $subtotal - $discountAmount);
-
-        $order = DB::transaction(function () use ($validated, $cart, $totalAmount, $couponCode, $discountAmount) {
-            $newOrder = Order::create([
-                'user_id' => Auth::id(),
-                'customer_name' => $validated['customer_name'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'note' => $validated['note'] ?? null,
-                'payment_method' => $validated['payment_method'],
-                'coupon_code' => $couponCode,
-                'discount_amount' => $discountAmount,
-                'total_amount' => $totalAmount,
-                'status' => 'PENDING',
-            ]);
-
-            foreach ($cart as $item) {
-                OrderItem::create([
-                    'order_id' => $newOrder->id,
-                    'product_id' => $item['id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                ]);
-
-                Product::where('id', $item['id'])
-                    ->where('stock', '>=', $item['quantity'])
-                    ->decrement('stock', $item['quantity']);
-            }
-
-            return $newOrder;
-        });
-
-        if (Auth::check()) {
-            CartItem::where('user_id', Auth::id())->delete();
-        }
         session()->forget(['cart', 'applied_coupon']);
-        session()->put('last_customer_phone', $validated['phone']);
+        session()->put('last_customer_phone', $order->phone);
 
         return redirect()->route('checkout.index', ['success_order_id' => $order->id])
             ->with('success', 'Đặt hàng thành công!');
     }
 
-    // Trang dành cho Khách hàng tra cứu đơn hàng của mình bằng SĐT (/my-orders)
-    public function trackOrders(Request $request)
+    public function trackOrders(Request $request): View
     {
-        $phone = trim($request->query('phone', session('last_customer_phone', '')));
+        $rawPhone = trim((string) $request->query('phone', (string) session('last_customer_phone', '')));
+        // Chỉ giữ ký tự số và dấu + để ngăn SQL LIKE Wildcard Injection (% hoặc _)
+        $phone = preg_replace('/[^0-9+]/', '', $rawPhone) ?: '';
         $orders = collect();
 
-        if ($phone !== '') {
-            $orders = Order::with('items.product')
-                ->where('phone', 'like', '%' . $phone . '%')
+        if (strlen($phone) >= 9) {
+            $orders = Order::query()
+                ->with(['items.product:id,sku,name,slug,images'])
+                ->where('phone', $phone)
                 ->latest()
+                ->limit(20)
                 ->get();
         }
 
