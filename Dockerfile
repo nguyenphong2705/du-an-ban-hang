@@ -10,6 +10,11 @@ RUN apk add --no-cache \
     libzip-dev \
     oniguruma-dev \
     icu-dev \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .build-deps \
+    && rm -rf /tmp/pear \
     && docker-php-ext-install \
     pdo \
     pdo_pgsql \

@@ -20,12 +20,13 @@
                         ✦ Best Seller
                     </span>
                 @endif
-                @if($discountPercent)
-                    <span class="inline-block bg-wine-700 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit shadow-xs border border-wine-600">
-                        -{{ $discountPercent }}%
-                    </span>
-                @endif
             </div>
+
+            @if($discountPercent)
+                <span class="absolute top-3 right-3 inline-block bg-wine-700 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit shadow-xs border border-wine-600">
+                    -{{ $discountPercent }}%
+                </span>
+            @endif
 
             <span class="absolute bottom-3 left-3 bg-white/90 text-sage-700 text-[11px] font-medium px-3 py-1 rounded-full border border-sage-100 shadow-2xs">
                 {{ $product->skin_type }}

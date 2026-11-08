@@ -21,14 +21,20 @@ class HomeController extends Controller
         $bestSellers = $allProducts->where('is_best_seller', true)->take(6);
 
         $selectedSkin = $request->query('skin_type', 'Tất cả');
+        $skinQuery = Product::with(['category', 'brand'])
+            ->latest();
+
         if ($selectedSkin !== 'Tất cả') {
-            $skinProducts = $allProducts->filter(function ($product) use ($selectedSkin) {
-                return mb_strtolower($product->skin_type) === mb_strtolower($selectedSkin)
-                    || $product->skin_type === 'Mọi loại da';
+            $skinQuery->where(function ($q) use ($selectedSkin) {
+                $q->where('skin_type', $selectedSkin)
+                    ->orWhere('skin_type', 'Mọi loại da');
             });
-        } else {
-            $skinProducts = $allProducts->take(8);
         }
+
+        // Mỗi trang gồm 2 hàng x 4 cột = 8 sản phẩm
+        $skinProducts = $skinQuery->paginate(8)
+            ->withQueryString()
+            ->fragment('skin-explorer');
 
         return view('home', compact(
             'categories',

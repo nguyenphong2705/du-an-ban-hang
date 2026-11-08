@@ -102,8 +102,8 @@
         </div>
     </section>
 
-    <!-- 4. LỌC NHANH THEO LOẠI DA -->
-    <section id="skin-explorer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- 4. LỌC NHANH THEO LOẠI DA & DANH SÁCH SẢN PHẨM PHÂN TRANG -->
+    <section id="skin-explorer" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
         <div class="text-center max-w-2xl mx-auto mb-10">
             <span class="text-xs font-bold uppercase tracking-[0.2em] text-sage-500">Cá Nhân Hóa Chu Trình Dưỡng Da</span>
             <h2 class="font-serif text-3xl font-bold text-stone-800 mt-1">Chọn Mỹ Phẩm Theo Loại Da Của Bạn</h2>
@@ -132,11 +132,74 @@
             @endforeach
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            @foreach($skinProducts as $product)
-                @include('partials.product-card', ['product' => $product])
-            @endforeach
-        </div>
+        @if($skinProducts->isEmpty())
+            <div class="bg-white rounded-3xl border border-sage-100 p-12 text-center space-y-3">
+                <p class="font-serif text-lg font-bold text-stone-700">Chưa có sản phẩm phù hợp</p>
+                <p class="text-sm text-stone-500">Vui lòng chọn loại da khác hoặc xem lại tất cả sản phẩm.</p>
+                <a href="{{ route('home', ['skin_type' => 'Tất cả']) }}#skin-explorer" class="inline-block bg-sage-500 hover:bg-sage-600 text-white text-xs font-semibold px-5 py-2.5 rounded-full transition">
+                    Xem tất cả sản phẩm
+                </a>
+            </div>
+        @else
+            <!-- Thông tin số lượng sản phẩm -->
+            <div class="flex items-center justify-between text-xs text-stone-500 mb-4 px-1">
+                <span>Hiển thị {{ $skinProducts->firstItem() ?? 0 }} - {{ $skinProducts->lastItem() ?? 0 }} trong tổng số <strong class="text-sage-700">{{ $skinProducts->total() }}</strong> sản phẩm</span>
+                <span>Trang {{ $skinProducts->currentPage() }} / {{ $skinProducts->lastPage() }}</span>
+            </div>
+
+            <!-- Lưới hiển thị: 4 cột x 2 hàng = 8 sản phẩm mỗi trang -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach($skinProducts as $product)
+                    @include('partials.product-card', ['product' => $product])
+                @endforeach
+            </div>
+
+            <!-- Thanh phân trang (Pagination) -->
+            @if($skinProducts->hasPages())
+                <div class="pt-10 flex flex-col items-center gap-3">
+                    <nav class="flex flex-wrap items-center justify-center gap-2" aria-label="Phân trang sản phẩm">
+                        {{-- Nút trang trước --}}
+                        @if($skinProducts->onFirstPage())
+                            <span class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-medium rounded-full border border-stone-200 text-stone-300 cursor-not-allowed select-none bg-stone-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                <span>Trước</span>
+                            </span>
+                        @else
+                            <a href="{{ $skinProducts->previousPageUrl() }}" class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-medium rounded-full border border-sage-200 text-sage-700 bg-white hover:bg-sage-50 hover:border-sage-300 transition shadow-2xs">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                <span>Trước</span>
+                            </a>
+                        @endif
+
+                        {{-- Danh sách các số trang --}}
+                        @foreach($skinProducts->getUrlRange(1, $skinProducts->lastPage()) as $pageNum => $url)
+                            @if($pageNum === $skinProducts->currentPage())
+                                <span class="w-10 h-10 flex items-center justify-center text-xs sm:text-sm rounded-full bg-sage-500 text-white font-bold shadow-md shadow-sage-200 select-none" aria-current="page">
+                                    {{ $pageNum }}
+                                </span>
+                            @else
+                                <a href="{{ $url }}" class="w-10 h-10 flex items-center justify-center text-xs sm:text-sm rounded-full border border-sage-200 text-stone-700 bg-white hover:bg-sage-50 hover:text-sage-700 hover:border-sage-300 transition shadow-2xs font-medium">
+                                    {{ $pageNum }}
+                                </a>
+                            @endif
+                        @endforeach
+
+                        {{-- Nút trang sau --}}
+                        @if($skinProducts->hasMorePages())
+                            <a href="{{ $skinProducts->nextPageUrl() }}" class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-medium rounded-full border border-sage-200 text-sage-700 bg-white hover:bg-sage-50 hover:border-sage-300 transition shadow-2xs">
+                                <span>Tiếp</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-medium rounded-full border border-stone-200 text-stone-300 cursor-not-allowed select-none bg-stone-50">
+                                <span>Tiếp</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </span>
+                        @endif
+                    </nav>
+                </div>
+            @endif
+        @endif
     </section>
 
     <!-- 5. THƯƠNG HIỆU ĐỒNG HÀNH -->
