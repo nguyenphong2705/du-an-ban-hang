@@ -7,14 +7,35 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\View\View;
 
+/**
+ * Class CustomerAuthController
+ *
+ * Xử lý toàn bộ logic tài khoản dành riêng cho Khách hàng:
+ * - Đăng nhập bằng Email hoặc Tên đăng nhập (username).
+ * - Đăng ký tài khoản khách hàng mới và tự động đăng nhập.
+ * - Đăng xuất và dọn dẹp phiên làm việc.
+ * - Quên mật khẩu: gửi mã xác thực OTP 6 số qua Email/SMS và đặt lại mật khẩu mới.
+ * - Trung tâm tài khoản khách hàng (/tai-khoan): xem lịch sử đơn hàng, trạng thái giao nhận, giỏ hàng đã lưu, sản phẩm đã mua và ví voucher cá nhân.
+ */
 class CustomerAuthController extends Controller
 {
+    /**
+     * Hiển thị giao diện đăng nhập / đăng ký dành cho Khách hàng.
+     *
+     * Chức năng:
+     * - Nếu khách hàng đã đăng nhập, tự động chuyển hướng đến Trung tâm tài khoản (/tai-khoan).
+     * - Trả về view `customer.login` hỗ trợ cả 2 tab Đăng nhập và Đăng ký.
+     *
+     * @return View|RedirectResponse Giao diện đăng nhập hoặc chuyển hướng đến trang tài khoản
+     */
     public function showLogin()
     {
         if (Auth::check() && !Auth::user()->is_admin) {
@@ -24,7 +45,19 @@ class CustomerAuthController extends Controller
         return view('customer.login');
     }
 
-    public function login(Request $request)
+    /**
+     * Xử lý xác thực đăng nhập của Khách hàng.
+     *
+     * Quy trình xử lý:
+     * 1. Xác thực dữ liệu đầu vào (hỗ trợ nhập Email hoặc Username).
+     * 2. Tìm người dùng trong database và đối chiếu mật khẩu với Hash::check().
+     * 3. Tạo lại Session ID để chống tấn công cố định phiên (Session Fixation).
+     * 4. Tự động đồng bộ giỏ hàng đã lưu trước đây trong database ra session.
+     *
+     * @param Request $request Yêu cầu HTTP chứa 'login' (email/username), 'password', và 'remember'
+     * @return RedirectResponse Chuyển hướng đến trang tài khoản hoặc quay lại kèm thông báo lỗi
+     */
+    public function login(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'login' => ['required', 'string'],
@@ -54,7 +87,19 @@ class CustomerAuthController extends Controller
         ])->onlyInput('login', 'auth_tab');
     }
 
-    public function register(Request $request)
+    /**
+     * Đăng ký tài khoản khách hàng mới.
+     *
+     * Quy trình xử lý:
+     * 1. Kiểm tra tính duy nhất của username và email.
+     * 2. Mã hóa mật khẩu an toàn bằng bcrypt.
+     * 3. Tạo bản ghi User với role = 'customer' và is_admin = false.
+     * 4. Tự động đăng nhập và đồng bộ giỏ hàng hiện tại với tài khoản mới.
+     *
+     * @param Request $request Yêu cầu HTTP chứa 'name', 'username', 'email', 'phone', 'address', 'password'
+     * @return RedirectResponse Chuyển hướng đến trang tài khoản
+     */
+    public function register(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -84,7 +129,13 @@ class CustomerAuthController extends Controller
             ->with('success', 'Đăng ký tài khoản khách hàng thành công!');
     }
 
-    public function logout(Request $request)
+    /**
+     * Đăng xuất tài khoản khách hàng.
+     *
+     * @param Request $request Yêu cầu HTTP
+     * @return RedirectResponse Chuyển hướng về trang đăng nhập khách hàng kèm thông báo
+     */
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
@@ -94,13 +145,30 @@ class CustomerAuthController extends Controller
             ->with('success', 'Đã đăng xuất khỏi tài khoản khách hàng.');
     }
 
-    public function showForgotPassword()
+    /**
+     * Hiển thị giao diện Quên mật khẩu & Nhập mã OTP.
+     *
+     * @return View Giao diện quên mật khẩu (customer.forgot-password)
+     */
+    public function showForgotPassword(): View
     {
         $resetState = session('password_reset_otp');
         return view('customer.forgot-password', compact('resetState'));
     }
 
-    public function sendResetCode(Request $request)
+    /**
+     * Tạo và gửi mã xác thực OTP 6 số qua Email/SMS để khôi phục mật khẩu.
+     *
+     * Chức năng:
+     * - Tìm kiếm tài khoản khách hàng theo Email, Số điện thoại hoặc Username.
+     * - Sinh mã số ngẫu nhiên 6 chữ số với thời hạn 10 phút.
+     * - Gửi email qua Laravel Mailer và ghi nhận log hệ thống SMS.
+     * - Lưu trạng thái OTP vào Session để phục vụ bước xác nhận.
+     *
+     * @param Request $request Yêu cầu HTTP chứa 'identifier' và 'channel'
+     * @return RedirectResponse Chuyển hướng đến màn hình nhập mã OTP
+     */
+    public function sendResetCode(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'identifier' => ['required', 'string', 'max:255'],
@@ -161,7 +229,19 @@ class CustomerAuthController extends Controller
             ->with('otp_sent', "Đã gửi mã xác thực 6 số về Email ({$user->email}) và Số điện thoại ({$user->phone}) của bạn!");
     }
 
-    public function resetPasswordWithCode(Request $request)
+    /**
+     * Xác thực mã OTP và cập nhật mật khẩu mới cho tài khoản.
+     *
+     * Chức năng:
+     * - Kiểm tra tính hợp lệ và thời hạn hiệu lực (10 phút) của mã OTP trong session.
+     * - Đối chiếu mã OTP người dùng nhập vào.
+     * - Cập nhật mật khẩu mới đã mã hóa bằng Hash::make().
+     * - Xóa trạng thái session OTP và điều hướng người dùng tới trang đăng nhập.
+     *
+     * @param Request $request Yêu cầu HTTP chứa 'otp_code' và 'password' (có xác nhận 'password_confirmation')
+     * @return RedirectResponse Chuyển hướng về trang đăng nhập hoặc báo lỗi
+     */
+    public function resetPasswordWithCode(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'otp_code' => ['required', 'string', 'size:6'],
@@ -204,6 +284,19 @@ class CustomerAuthController extends Controller
             ->with('success', "Đã tạo mật khẩu mới thành công cho tài khoản {$user->username}! Vui lòng đăng nhập.");
     }
 
+    /**
+     * Trung tâm tài khoản cá nhân của Khách hàng (/tai-khoan).
+     *
+     * Chức năng:
+     * - Lấy toàn bộ lịch sử đơn hàng của khách theo user_id hoặc số điện thoại.
+     * - Lọc đơn hàng theo trạng thái (chờ xác nhận, đang xử lý, đang giao, đã giao, đã hủy).
+     * - Đồng bộ và tính toán tổng giá trị giỏ hàng đã lưu.
+     * - Hiển thị danh sách sản phẩm khách hàng đã từng mua để mua lại nhanh.
+     * - Gợi ý top sản phẩm nổi bật và danh sách các mã giảm giá (voucher) khả dụng.
+     *
+     * @param Request $request Yêu cầu HTTP chứa bộ lọc 'status'
+     * @return View|RedirectResponse Giao diện trang tài khoản (customer.account)
+     */
     public function account(Request $request)
     {
         if (!Auth::check()) {
@@ -269,7 +362,17 @@ class CustomerAuthController extends Controller
         ));
     }
 
-    public function applyVoucherToCart(Request $request)
+    /**
+     * Áp dụng nhanh mã giảm giá từ Trung tâm tài khoản vào giỏ hàng.
+     *
+     * Chức năng:
+     * - Kiểm tra tính hợp lệ và thời hạn của voucher.
+     * - Lưu mã giảm giá vào session và chuyển thẳng đến trang thanh toán.
+     *
+     * @param Request $request Yêu cầu HTTP chứa 'coupon_code'
+     * @return RedirectResponse Chuyển hướng đến trang thanh toán (/thanh-toan)
+     */
+    public function applyVoucherToCart(Request $request): RedirectResponse
     {
         $code = strtoupper(trim((string) $request->input('coupon_code', '')));
         $existingCoupon = session()->get('applied_coupon');

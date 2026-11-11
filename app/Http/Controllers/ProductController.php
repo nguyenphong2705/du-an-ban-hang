@@ -8,7 +8,16 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
+/**
+ * Class ProductController
+ *
+ * Điều hướng và xử lý logic hiển thị sản phẩm dành cho Khách hàng:
+ * - Danh sách sản phẩm kèm bộ lọc đa tiêu chí (danh mục, thương hiệu, loại da, khoảng giá, sắp xếp, tìm kiếm).
+ * - Hỗ trợ cả 3 kiểu phản hồi: HTML trang đầy đủ, HTML partial (AJAX không reload), và REST API JSON.
+ * - Trang chi tiết sản phẩm và gợi ý các sản phẩm liên quan cùng danh mục.
+ */
 class ProductController extends Controller
 {
     /** Số sản phẩm mỗi trang */
@@ -227,6 +236,17 @@ class ProductController extends Controller
         ];
     }
 
+    /**
+     * Hiển thị trang chi tiết sản phẩm và các sản phẩm liên quan.
+     *
+     * Chức năng:
+     * - Tìm kiếm sản phẩm theo đường dẫn thân thiện (slug) kèm thông tin danh mục và thương hiệu.
+     * - Tự động ném lỗi 404 (firstOrFail) nếu không tìm thấy slug tương ứng.
+     * - Lấy tối đa 4 sản phẩm cùng danh mục để hiển thị ở mục "Sản phẩm liên quan".
+     *
+     * @param string $slug Chuỗi định danh URL thân thiện của sản phẩm
+     * @return View Giao diện chi tiết sản phẩm (products.show)
+     */
     public function show(string $slug)
     {
         $product = Product::with(['category', 'brand'])

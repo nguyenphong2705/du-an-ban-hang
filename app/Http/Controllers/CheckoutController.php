@@ -15,16 +15,46 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use RuntimeException;
 
+/**
+ * Class CheckoutController
+ *
+ * Điều hướng và xử lý quy trình thanh toán, áp dụng mã giảm giá, đặt hàng và tra cứu đơn hàng:
+ * - Hiển thị trang thanh toán, tính toán tạm tính, phí ship, số tiền giảm voucher.
+ * - Áp dụng và gỡ bỏ mã giảm giá (voucher) cho đơn hàng.
+ * - Đặt hàng và lưu thông tin đơn hàng cùng các món hàng vào cơ sở dữ liệu.
+ * - Tra cứu nhanh lịch sử đơn hàng theo số điện thoại (chống SQL injection và IDOR).
+ */
 class CheckoutController extends Controller
 {
+    /** Ngưỡng miễn phí vận chuyển (mặc định: 499.000₫) */
     public const FREE_SHIPPING_THRESHOLD = CheckoutService::FREE_SHIPPING_THRESHOLD;
+
+    /** Phí vận chuyển tiêu chuẩn toàn quốc (mặc định: 30.000₫) */
     public const STANDARD_SHIPPING_FEE = CheckoutService::STANDARD_SHIPPING_FEE;
 
+    /**
+     * Khởi tạo Controller với CheckoutService.
+     *
+     * @param CheckoutService $checkoutService Dịch vụ tính toán đơn hàng và thanh toán
+     */
     public function __construct(
         private readonly CheckoutService $checkoutService
     ) {
     }
 
+    /**
+     * Hiển thị trang thanh toán và tổng quan đơn hàng.
+     *
+     * Chức năng:
+     * - Lấy giỏ hàng từ session và thông tin mã giảm giá đang áp dụng.
+     * - Tính toán chi tiết: tiền hàng, phí ship, số tiền giảm giá, tổng thanh toán.
+     * - Tự động gỡ voucher nếu giỏ hàng không còn đủ điều kiện áp dụng.
+     * - Hiển thị danh sách các voucher đang kích hoạt để khách hàng lựa chọn.
+     * - Bảo vệ chống IDOR: chỉ cho phép xem đơn hàng vừa tạo nếu trùng phiên hoặc đúng user.
+     *
+     * @param Request $request Yêu cầu HTTP (có thể kèm 'success_order_id')
+     * @return View Giao diện thanh toán (checkout.index)
+     */
     public function index(Request $request): View
     {
         $cart = session()->get('cart', []);
@@ -64,6 +94,16 @@ class CheckoutController extends Controller
         ]));
     }
 
+    /**
+     * Áp dụng mã giảm giá (voucher) vào đơn hàng.
+     *
+     * Quy tắc nghiệp vụ:
+     * - Mỗi đơn hàng chỉ áp dụng tối đa 01 voucher.
+     * - Kiểm tra mã có tồn tại, còn hạn sử dụng và đạt giá trị đơn hàng tối thiểu không.
+     *
+     * @param ApplyCouponRequest $request Form request kiểm tra định dạng mã giảm giá
+     * @return RedirectResponse Quay lại trang thanh toán kèm thông báo kết quả
+     */
     public function applyCoupon(ApplyCouponRequest $request): RedirectResponse
     {
         $code = $request->validated('coupon_code');
@@ -110,6 +150,11 @@ class CheckoutController extends Controller
         return back()->with('success', "Đã áp dụng mã giảm giá {$coupon->code} (-{$coupon->discount_percent}%)! (Mỗi đơn chỉ áp dụng 01 voucher)");
     }
 
+    /**
+     * Gỡ bỏ mã giảm giá đang áp dụng khỏi đơn hàng.
+     *
+     * @return RedirectResponse Quay lại trang thanh toán kèm thông báo
+     */
     public function removeCoupon(): RedirectResponse
     {
         session()->forget('applied_coupon');
@@ -117,6 +162,19 @@ class CheckoutController extends Controller
         return back()->with('success', 'Đã gỡ mã giảm giá.');
     }
 
+    /**
+     * Xử lý xác nhận đặt hàng và lưu đơn hàng vào database.
+     *
+     * Quy trình xử lý:
+     * 1. Kiểm tra giỏ hàng có sản phẩm hay không.
+     * 2. Gọi CheckoutService để tạo đơn hàng (Order) và chi tiết đơn hàng (OrderItem) trong Database Transaction.
+     * 3. Trừ tồn kho sản phẩm tương ứng.
+     * 4. Xóa session giỏ hàng và voucher sau khi đặt hàng thành công.
+     * 5. Lưu số điện thoại vào session để hỗ trợ tra cứu đơn và chuyển đến trang thông báo thành công.
+     *
+     * @param StoreOrderRequest $request Form request xác thực thông tin người nhận (tên, sđt, địa chỉ, phương thức thanh toán)
+     * @return RedirectResponse Chuyển hướng đến trang thành công hoặc quay lại nếu có lỗi
+     */
     public function store(StoreOrderRequest $request): RedirectResponse
     {
         $cart = session()->get('cart', []);
@@ -143,6 +201,17 @@ class CheckoutController extends Controller
             ->with('success', 'Đặt hàng thành công!');
     }
 
+    /**
+     * Tra cứu lịch sử đơn hàng nhanh bằng số điện thoại khách hàng.
+     *
+     * Tính năng an toàn:
+     * - Lọc sạch ký tự lạ, ngăn chặn SQL Wildcard Injection (ký tự % hoặc _).
+     * - Chỉ tìm kiếm khi số điện thoại có từ 9 chữ số trở lên.
+     * - Tự động điền số điện thoại vừa đặt hàng gần nhất từ session nếu có.
+     *
+     * @param Request $request Yêu cầu HTTP chứa tham số query 'phone'
+     * @return View Giao diện tra cứu đơn hàng (checkout.track)
+     */
     public function trackOrders(Request $request): View
     {
         $rawPhone = trim((string) $request->query('phone', (string) session('last_customer_phone', '')));
