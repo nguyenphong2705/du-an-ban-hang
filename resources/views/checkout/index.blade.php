@@ -65,7 +65,7 @@
                             <span>{{ number_format($successItemsSubtotal, 0, ',', '.') }}₫</span>
                         </div>
                         @if($successOrder->coupon_code && $successDiscount > 0)
-                            <div class="flex justify-between text-xs text-wine-700 font-semibold bg-wine-50 px-2.5 py-1 rounded-lg border border-wine-200">
+                            <div class="flex justify-between text-xs text-terracotta-700 font-semibold bg-terracotta-50 px-2.5 py-1 rounded-lg border border-terracotta-200">
                                 <span>🎟️ Voucher ({{ $successOrder->coupon_code }}):</span>
                                 <span>-{{ number_format($successDiscount, 0, ',', '.') }}₫</span>
                             </div>
@@ -197,18 +197,63 @@
                 <!-- Shipping & Payment Form -->
                 <form id="checkout-form" action="{{ route('checkout.store') }}" method="POST" class="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-sage-100 shadow-xs space-y-6">
                     @csrf
-                    <h2 class="font-serif text-xl font-bold text-stone-800 pb-3 border-b border-sage-100">
-                        1. Thông Tin Người Nhận & Địa Chỉ Giao Hàng
-                    </h2>
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-sage-100">
+                        <h2 class="font-serif text-xl font-bold text-stone-800">
+                            1. Thông Tin Người Nhận & Địa Chỉ Giao Hàng
+                        </h2>
+                        @if(auth()->check() && !auth()->user()->is_admin)
+                            <a href="{{ route('customer.addresses') }}" class="text-xs font-semibold text-sage-600 hover:underline">
+                                ⚙️ Quản lý sổ địa chỉ ({{ isset($savedAddresses) ? $savedAddresses->count() : 0 }}) →
+                            </a>
+                        @endif
+                    </div>
+
+                    @if(isset($savedAddresses) && $savedAddresses->isNotEmpty())
+                        <div class="p-4 rounded-2xl bg-sage-50/70 border border-sage-200 space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-sage-800 uppercase tracking-wider text-[11px]">
+                                    📍 Chọn Nhanh Địa Chỉ Đã Lưu (Không Cần Nhập Lại)
+                                </span>
+                                <a href="{{ route('customer.addresses') }}" class="text-[11px] font-bold text-terracotta-600 hover:underline">
+                                    + Thêm / Đặt địa chỉ mặc định
+                                </a>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2">
+                                @foreach($savedAddresses as $sAddr)
+                                    <div data-saved-addr-card="{{ $sAddr->id }}"
+                                        onclick='applySavedCustomerAddress(@json($sAddr), this)'
+                                        class="p-3 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 {{ $sAddr->is_default ? 'border-sage-500 bg-white shadow-2xs' : 'border-sage-100 bg-white/70 hover:bg-white hover:border-sage-300' }}">
+                                        <div class="space-y-0.5 min-w-0">
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <span class="font-bold text-stone-800">🏷️ {{ $sAddr->label }}</span>
+                                                @if($sAddr->is_default)
+                                                    <span class="text-[10px] font-bold bg-sage-600 text-white px-2 py-0.5 rounded-full">★ Mặc định</span>
+                                                @endif
+                                                <span class="text-stone-600 font-medium">
+                                                    • {{ $sAddr->recipient_name ?: auth()->user()->name }} ({{ $sAddr->recipient_phone ?: auth()->user()->phone }})
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-stone-600 truncate">
+                                                {{ $sAddr->address }}
+                                            </p>
+                                        </div>
+                                        <span class="text-[11px] font-bold text-sage-600 flex-shrink-0">
+                                            Chọn giao →
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">Họ và tên người nhận *</label>
-                            <input type="text" name="customer_name" required value="{{ old('customer_name', auth()->user()->name ?? '') }}" placeholder="VD: Nguyễn Thị Minh Châu" class="w-full px-4 py-3 text-sm rounded-2xl border border-sage-200 bg-[#F5FAF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-sage-300">
+                            <input type="text" id="checkout-customer-name" name="customer_name" required value="{{ old('customer_name', $defaultAddress->recipient_name ?? (auth()->user()->name ?? '')) }}" placeholder="VD: Nguyễn Thị Minh Châu" class="w-full px-4 py-3 text-sm rounded-2xl border border-sage-200 bg-[#F5FAF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-sage-300">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold uppercase tracking-wider text-stone-600 mb-2">Số điện thoại liên hệ *</label>
-                            <input type="tel" id="checkout-phone" name="phone" required value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="VD: 0909 123 456" class="w-full px-4 py-3 text-sm rounded-2xl border border-sage-200 bg-[#F5FAF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-sage-300">
+                            <input type="tel" id="checkout-phone" name="phone" required value="{{ old('phone', $defaultAddress->recipient_phone ?? (auth()->user()->phone ?? '')) }}" placeholder="VD: 0909 123 456" class="w-full px-4 py-3 text-sm rounded-2xl border border-sage-200 bg-[#F5FAF7] focus:bg-white focus:outline-none focus:ring-2 focus:ring-sage-300">
                         </div>
                     </div>
 
@@ -283,7 +328,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label for="select-province" class="block text-[11px] font-semibold text-stone-600 mb-1.5">Tỉnh / Thành phố *</label>
-                                <select id="select-province" name="province" required data-old="{{ old('province') }}"
+                                <select id="select-province" name="province" required data-old="{{ old('province', $defaultAddress->province ?? 'TP. Hồ Chí Minh') }}"
                                     class="w-full px-3.5 py-2.5 text-sm rounded-2xl border border-sage-200 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-300">
                                     <option value="">-- Chọn Tỉnh/Thành phố --</option>
                                 </select>
@@ -291,7 +336,7 @@
 
                             <div>
                                 <label for="select-district" class="block text-[11px] font-semibold text-stone-600 mb-1.5">Quận / Huyện *</label>
-                                <select id="select-district" name="district" required disabled data-old="{{ old('district') }}"
+                                <select id="select-district" name="district" required disabled data-old="{{ old('district', $defaultAddress->district ?? 'Quận 1') }}"
                                     class="w-full px-3.5 py-2.5 text-sm rounded-2xl border border-sage-200 bg-white text-stone-800 disabled:bg-stone-100 disabled:text-stone-400 focus:outline-none focus:ring-2 focus:ring-sage-300">
                                     <option value="">-- Chọn Quận/Huyện --</option>
                                 </select>
@@ -299,7 +344,7 @@
 
                             <div>
                                 <label for="select-ward" class="block text-[11px] font-semibold text-stone-600 mb-1.5">Phường / Xã *</label>
-                                <select id="select-ward" name="ward" required disabled data-old="{{ old('ward') }}"
+                                <select id="select-ward" name="ward" required disabled data-old="{{ old('ward', $defaultAddress->ward ?? 'Phường Bến Thành') }}"
                                     class="w-full px-3.5 py-2.5 text-sm rounded-2xl border border-sage-200 bg-white text-stone-800 disabled:bg-stone-100 disabled:text-stone-400 focus:outline-none focus:ring-2 focus:ring-sage-300">
                                     <option value="">-- Chọn Phường/Xã --</option>
                                 </select>
@@ -310,17 +355,17 @@
                             <label for="input-street" class="block text-[11px] font-semibold text-stone-600 mb-1.5">
                                 Số nhà, tên đường, tòa nhà / hẻm (Tự động điền từ bản đồ hoặc tự nhập) *
                             </label>
-                            <input type="text" id="input-street" name="street_address" required value="{{ old('street_address') }}"
+                            <input type="text" id="input-street" name="street_address" required value="{{ old('street_address', $defaultAddress->street_address ?? ($defaultAddress->address ?? (auth()->user()->address ?? ''))) }}"
                                 placeholder="VD: Số 28 Phạm Văn Chiêu (hoặc bấm vào bản đồ để tự động điền)"
                                 class="w-full px-4 py-3 text-sm rounded-2xl border border-sage-200 bg-white focus:outline-none focus:ring-2 focus:ring-sage-300">
                         </div>
 
                         <!-- Hidden full address synced for backend & live preview -->
-                        <input type="hidden" id="input-full-address" name="address" value="{{ old('address') }}">
+                        <input type="hidden" id="input-full-address" name="address" value="{{ old('address', $defaultAddress->address ?? (auth()->user()->address ?? '')) }}">
                         <div class="text-xs text-stone-600 bg-white/90 px-3.5 py-2.5 rounded-2xl border border-sage-100 flex items-start gap-2">
                             <span class="text-sage-600 font-bold flex-shrink-0">Giao đến:</span>
                             <span id="address-preview-text" class="font-medium text-stone-800">
-                                {{ old('address', 'Chạm vào bản đồ phía trên hoặc chọn Tỉnh/TP, Quận/Huyện, Phường/Xã.') }}
+                                {{ old('address', $defaultAddress->address ?? (auth()->user()->address ?? 'Chạm vào bản đồ phía trên hoặc chọn Tỉnh/TP, Quận/Huyện, Phường/Xã.')) }}
                             </span>
                         </div>
 
@@ -590,52 +635,57 @@
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm font-semibold text-stone-800 line-clamp-1">{{ $item['name'] }}</p>
                                         <p class="text-xs text-stone-400">{{ $item['volume'] }} • {{ $item['skin_type'] }}</p>
-                                        <p class="text-sm font-bold text-sage-600 mt-0.5">{{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}₫</p>
+                                        <p class="text-sm font-bold text-sage-600 mt-0.5">
+                                            {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}₫
+                                            @if($item['quantity'] > 1)
+                                                <span class="text-[11px] font-normal text-stone-400">({{ number_format($item['price'], 0, ',', '.') }}₫ x {{ $item['quantity'] }})</span>
+                                            @endif
+                                        </p>
                                     </div>
-                                    <div class="flex items-center gap-1">
+                                    <div class="inline-flex items-center border border-sage-200 rounded-full bg-[#F5FAF7] px-1 py-0.5 flex-shrink-0">
                                         <form action="{{ route('cart.update') }}" method="POST" class="inline">
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $item['id'] }}">
                                             <input type="hidden" name="quantity" value="{{ $item['quantity'] - 1 }}">
-                                            <button type="submit" class="w-7 h-7 rounded-full bg-sage-50 text-stone-600 hover:text-sage-600 font-bold text-xs">-</button>
+                                            <button type="submit" title="Giảm 1 sản phẩm" class="w-7 h-7 rounded-full hover:bg-sage-200/70 text-stone-700 hover:text-sage-700 font-bold text-xs flex items-center justify-center transition cursor-pointer">−</button>
                                         </form>
-                                        <span class="w-6 text-center text-xs font-bold">{{ $item['quantity'] }}</span>
+                                        <span class="w-7 text-center text-xs font-bold text-stone-800">{{ $item['quantity'] }}</span>
                                         <form action="{{ route('cart.update') }}" method="POST" class="inline">
                                             @csrf
                                             <input type="hidden" name="product_id" value="{{ $item['id'] }}">
                                             <input type="hidden" name="quantity" value="{{ $item['quantity'] + 1 }}">
-                                            <button type="submit" class="w-7 h-7 rounded-full bg-sage-50 text-stone-600 hover:text-sage-600 font-bold text-xs">+</button>
+                                            <button type="submit" title="Tăng 1 sản phẩm" class="w-7 h-7 rounded-full hover:bg-sage-200/70 text-stone-700 hover:text-sage-700 font-bold text-xs flex items-center justify-center transition cursor-pointer">+</button>
                                         </form>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
 
-                        <!-- Mã giảm giá (Voucher) - Tone nền Wine Red sang trọng, chỉ cho phép áp dụng duy nhất 1 voucher -->
-                        <div class="p-4 rounded-3xl bg-gradient-to-br from-wine-50 via-[#FFF7F8] to-wine-100/80 border border-wine-200 space-y-3 shadow-2xs">
+                        <!-- Mã giảm giá (Voucher) - Tone nền Terracotta sang trọng, chỉ cho phép áp dụng duy nhất 1 voucher -->
+                        <div class="p-4 rounded-3xl bg-gradient-to-br from-terracotta-50 via-[#FFF8F5] to-terracotta-100/80 border border-terracotta-200 space-y-3 shadow-2xs">
                             <div class="flex items-center justify-between">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-wine-800">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-terracotta-800">
                                     🎟️ Mã Giảm Giá / Voucher
                                 </label>
-                                <span class="text-[11px] font-semibold text-white bg-wine-700 px-2.5 py-0.5 rounded-full shadow-2xs">
+                                <span class="text-[11px] font-semibold text-white bg-terracotta-600 px-2.5 py-0.5 rounded-full shadow-2xs">
                                     Tối đa 01 voucher / đơn
                                 </span>
                             </div>
 
                             @if(!empty($appliedCoupon))
-                                <div class="bg-wine-700 text-white border border-wine-800 p-3.5 rounded-2xl text-xs space-y-2 shadow-sm">
+                                <div class="bg-terracotta-600 text-white border border-terracotta-700 p-3.5 rounded-2xl text-xs space-y-2 shadow-sm">
                                     <div class="flex items-center justify-between">
-                                        <span class="font-semibold text-wine-50">
+                                        <span class="font-semibold text-terracotta-50">
                                             ✓ Đang áp dụng (1/1): <strong class="font-mono text-sm text-white underline">{{ $appliedCoupon['code'] }}</strong> (-{{ $appliedCoupon['discount_percent'] }}%)
                                         </span>
                                         <form action="{{ route('checkout.coupon.remove') }}" method="POST">
                                             @csrf
-                                            <button type="submit" class="text-wine-800 bg-white hover:bg-wine-50 px-2.5 py-1 rounded-xl font-bold transition shadow-2xs cursor-pointer">
+                                            <button type="submit" class="text-terracotta-800 bg-white hover:bg-terracotta-50 px-2.5 py-1 rounded-xl font-bold transition shadow-2xs cursor-pointer">
                                                 ✕ Gỡ mã
                                             </button>
                                         </form>
                                     </div>
-                                    <p class="text-[11px] text-wine-100">
+                                    <p class="text-[11px] text-terracotta-100">
                                         🔒 Mỗi đơn hàng chỉ được sử dụng <strong>01 mã giảm giá duy nhất</strong>. Nếu muốn đổi sang mã khác, vui lòng bấm <strong>"Gỡ mã"</strong> trước.
                                     </p>
                                 </div>
@@ -644,12 +694,12 @@
                                     <div class="flex flex-wrap gap-1.5 pt-1">
                                         @foreach($activeCoupons as $cp)
                                             @if($appliedCoupon['code'] === $cp->code)
-                                                <span class="text-[11px] bg-wine-800 text-white border border-wine-600 px-2.5 py-1 rounded-full font-mono font-semibold shadow-2xs">
+                                                <span class="text-[11px] bg-terracotta-700 text-white border border-terracotta-500 px-2.5 py-1 rounded-full font-mono font-semibold shadow-2xs">
                                                     ✓ {{ $cp->code }} (-{{ $cp->discount_percent }}%)
                                                 </span>
                                             @else
                                                 <button type="button" disabled title="Không thể áp dụng 2 mã giảm giá cùng lúc. Hãy gỡ mã {{ $appliedCoupon['code'] }} nếu muốn đổi mã."
-                                                    class="text-[11px] bg-wine-100/60 text-wine-400 border border-wine-200 px-2.5 py-1 rounded-full font-mono font-semibold cursor-not-allowed opacity-70">
+                                                    class="text-[11px] bg-terracotta-100/60 text-terracotta-400 border border-terracotta-200 px-2.5 py-1 rounded-full font-mono font-semibold cursor-not-allowed opacity-70">
                                                     🔒 {{ $cp->code }} (-{{ $cp->discount_percent }}%)
                                                 </button>
                                             @endif
@@ -659,12 +709,12 @@
                             @else
                                 <form action="{{ route('checkout.coupon.apply') }}" method="POST" class="flex gap-2">
                                     @csrf
-                                    <input type="text" name="coupon_code" placeholder="Nhập 1 mã (VD: LUMINA20)" class="flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-2xl border border-wine-200 bg-white text-wine-900 placeholder-wine-400 focus:outline-none focus:ring-2 focus:ring-wine-400">
-                                    <button type="submit" class="bg-wine-700 hover:bg-wine-800 text-white text-xs font-semibold px-4 py-2 rounded-2xl transition shadow-xs cursor-pointer">
+                                    <input type="text" name="coupon_code" placeholder="Nhập 1 mã (VD: LUMINA20)" class="flex-1 px-3.5 py-2 text-xs font-mono uppercase rounded-2xl border border-terracotta-200 bg-white text-terracotta-900 placeholder-terracotta-400 focus:outline-none focus:ring-2 focus:ring-terracotta-400">
+                                    <button type="submit" class="bg-terracotta-600 hover:bg-terracotta-700 text-white text-xs font-semibold px-4 py-2 rounded-2xl transition shadow-xs cursor-pointer">
                                         Áp dụng
                                     </button>
                                 </form>
-                                <p class="text-[11px] text-wine-800/80">
+                                <p class="text-[11px] text-terracotta-800/80">
                                     * Lưu ý: Chỉ chọn 01 mã giảm giá cho đơn hàng (không cộng dồn 2 mã).
                                 </p>
                                 @if(!empty($activeCoupons) && $activeCoupons->count() > 0)
@@ -678,7 +728,7 @@
                                                 <input type="hidden" name="coupon_code" value="{{ $cp->code }}">
                                                 <button type="submit"
                                                     title="{{ $eligible ? 'Bấm để áp dụng mã ' . $cp->code : 'Đơn tối thiểu ' . number_format($cp->min_order_amount, 0, ',', '.') . '₫' }}"
-                                                    class="text-[11px] {{ $eligible ? 'bg-wine-700 hover:bg-wine-800 text-white border-wine-700 cursor-pointer shadow-2xs' : 'bg-white/80 text-wine-400 border-wine-200 hover:bg-wine-50' }} border px-2.5 py-1 rounded-full font-mono font-semibold transition">
+                                                    class="text-[11px] {{ $eligible ? 'bg-terracotta-600 hover:bg-terracotta-700 text-white border-terracotta-600 cursor-pointer shadow-2xs' : 'bg-white/80 text-terracotta-400 border-terracotta-200 hover:bg-terracotta-50' }} border px-2.5 py-1 rounded-full font-mono font-semibold transition">
                                                     {{ $cp->code }} (-{{ $cp->discount_percent }}%)
                                                     @if(($cp->min_order_amount ?? 0) > 0)
                                                         <span class="font-sans font-normal text-[10px] opacity-85">• từ {{ number_format($cp->min_order_amount / 1000, 0, ',', '.') }}k</span>
@@ -692,7 +742,7 @@
                         </div>
 
                         <!-- Thông báo & Thanh tiến trình Miễn phí vận chuyển toàn quốc (Đơn từ 500.000₫) -->
-                        <div id="shipping-notice-box" class="p-3.5 rounded-2xl border {{ $shippingFee === 0 ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200' }} space-y-2 text-xs">
+                        <div id="shipping-notice-box" class="p-3.5 rounded-2xl border {{ $shippingFee === 0 ? 'bg-emerald-50/70 border-emerald-200' : 'bg-terracotta-50/80 border-terracotta-200' }} space-y-2 text-xs">
                             @if($shippingFee === 0)
                                 <div class="flex items-center justify-between text-emerald-800 font-semibold">
                                     <span>🚚 Miễn phí vận chuyển toàn quốc</span>
@@ -702,15 +752,15 @@
                                     Giá trị đơn hàng đạt <strong>{{ number_format($afterDiscount, 0, ',', '.') }}₫</strong> (từ 500.000₫ trở lên), bạn được miễn phí ship toàn quốc!
                                 </p>
                             @else
-                                <div class="flex items-center justify-between text-amber-900 font-semibold">
+                                <div class="flex items-center justify-between text-terracotta-900 font-semibold">
                                     <span id="shipping-box-title">🚚 {{ $shippingZoneLabel ?? ('Phí ship: +' . number_format($shippingFee, 0, ',', '.') . '₫') }}</span>
-                                    <span class="bg-amber-200/80 text-amber-900 text-[10px] px-2 py-0.5 rounded-full flex-shrink-0">Đơn &lt; 500.000₫</span>
+                                    <span class="bg-terracotta-200/80 text-terracotta-900 text-[10px] px-2 py-0.5 rounded-full flex-shrink-0">Đơn &lt; 500.000₫</span>
                                 </div>
-                                <p class="text-[11px] text-amber-800">
-                                    Giá trị đơn hiện tại là <strong>{{ number_format($afterDiscount, 0, ',', '.') }}₫</strong> (nhỏ hơn 500.000₫). Mua thêm <strong>{{ number_format($amountNeededForFreeShip, 0, ',', '.') }}₫</strong> để được <strong>Miễn phí vận chuyển toàn quốc</strong>!
+                                <p class="text-[11px] text-terracotta-800">
+                                    Giá trị đơn hiện tại là <strong>{{ number_format($afterDiscount, 0, ',', '.') }}₫</strong> (nhỏ hơn 500.000₫). Mua thêm <strong class="text-terracotta-600">{{ number_format($amountNeededForFreeShip, 0, ',', '.') }}₫</strong> để được <strong>Miễn phí vận chuyển toàn quốc</strong>!
                                 </p>
-                                <div class="w-full h-1.5 bg-amber-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-amber-500 rounded-full transition-all duration-300" style="width: {{ min(100, (int) round(($afterDiscount / $freeShippingThreshold) * 100)) }}%"></div>
+                                <div class="w-full h-2 bg-terracotta-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-terracotta-600 rounded-full transition-all duration-300" style="width: {{ min(100, (int) round(($afterDiscount / $freeShippingThreshold) * 100)) }}%"></div>
                                 </div>
                             @endif
                         </div>
@@ -722,7 +772,7 @@
                                 <span>{{ number_format($subtotal, 0, ',', '.') }}₫</span>
                             </div>
                             @if(!empty($discountAmount) && $discountAmount > 0)
-                                <div class="flex justify-between text-wine-700 font-semibold bg-wine-50 px-2.5 py-1.5 rounded-xl border border-wine-200">
+                                <div class="flex justify-between text-terracotta-700 font-semibold bg-terracotta-50 px-2.5 py-1.5 rounded-xl border border-terracotta-200">
                                     <span>🎟️ Giảm giá Voucher ({{ $appliedCoupon['code'] ?? '' }})</span>
                                     <span>-{{ number_format($discountAmount, 0, ',', '.') }}₫</span>
                                 </div>
@@ -1285,6 +1335,48 @@
             if (momoQrAmount) momoQrAmount.textContent = formatVnd(checkoutTotalAmount);
 
             updateDynamicQrCodes();
+        };
+
+        window.applySavedCustomerAddress = function (addrObj, cardEl) {
+            if (!addrObj) return;
+
+            const nameEl = document.getElementById('checkout-customer-name');
+            if (nameEl && addrObj.recipient_name) {
+                nameEl.value = addrObj.recipient_name;
+            }
+            if (phoneInput && addrObj.recipient_phone) {
+                phoneInput.value = addrObj.recipient_phone;
+            }
+
+            const provName = addrObj.province || 'TP. Hồ Chí Minh';
+            const distName = addrObj.district || 'Quận 1';
+            const wardName = addrObj.ward || 'Phường Bến Thành';
+            const streetVal = addrObj.street_address || addrObj.address || '';
+
+            const matchedProv = selectOrInjectOption(provinceSelect, provName);
+            populateDistricts(matchedProv);
+            const matchedDist = selectOrInjectOption(districtSelect, distName);
+            populateWards(matchedProv, matchedDist);
+            selectOrInjectOption(wardSelect, wardName);
+
+            streetInput.value = streetVal;
+            updateFullAddressPreview();
+            if (fullAddressInput && addrObj.address) {
+                fullAddressInput.value = addrObj.address;
+            }
+            if (addressPreviewText && addrObj.address) {
+                addressPreviewText.textContent = addrObj.address;
+            }
+
+            document.querySelectorAll('[data-saved-addr-card]').forEach(el => {
+                el.className = 'p-3 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 border-sage-100 bg-white/70 hover:bg-white hover:border-sage-300';
+            });
+            if (cardEl) {
+                cardEl.className = 'p-3 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 border-sage-500 bg-white shadow-2xs';
+            }
+
+            panMapToSelectedProvince(matchedProv);
+            window.recalculateShippingAndTotal();
         };
 
         window.quickSelectTestLocation = function (provName, distName, wardName, lat, lng) {

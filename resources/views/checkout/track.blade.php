@@ -61,7 +61,7 @@
                             <div class="text-xs text-stone-500">
                                 {{ $order->items->count() }} sản phẩm • {{ $pmLabel }}
                                 @if($order->coupon_code)
-                                    • Voucher <strong class="text-wine-700 bg-wine-50 px-2 py-0.5 rounded-full border border-wine-200">{{ $order->coupon_code }}</strong>
+                                    • Voucher <strong class="text-terracotta-700 bg-terracotta-50 px-2 py-0.5 rounded-full border border-terracotta-200">{{ $order->coupon_code }}</strong>
                                 @endif
                             </div>
                             <div class="text-base font-bold text-sage-600">

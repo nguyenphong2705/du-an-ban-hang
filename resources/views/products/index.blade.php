@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Tất Cả Mỹ Phẩm & Dưỡng Da | Shine Beauty')
+@section('title', 'Danh Mục Mỹ Phẩm & Chăm Sóc Da Chính Hãng | Shine Beauty')
+@section('meta_description', 'Khám phá bộ sưu tập mỹ phẩm, serum, kem dưỡng ẩm, chống nắng, trang điểm và nước hoa chính hãng tại Shine Beauty. Lọc nhanh theo loại da, thương hiệu và khoảng giá.')
+@section('canonical', route('products.index'))
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

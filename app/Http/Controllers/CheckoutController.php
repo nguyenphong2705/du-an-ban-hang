@@ -60,7 +60,27 @@ class CheckoutController extends Controller
         $cart = session()->get('cart', []);
         $appliedCouponSession = session()->get('applied_coupon');
 
-        $summary = $this->checkoutService->calculateCartSummary($cart, $appliedCouponSession);
+        $savedAddresses = collect();
+        $defaultAddress = null;
+
+        if (Auth::check()) {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $user->ensureAddressesInitialized();
+            $savedAddresses = $user->addresses()->get();
+            $defaultAddress = $savedAddresses->firstWhere('is_default', true) ?? $savedAddresses->first();
+        }
+
+        $initialProvince = $defaultAddress?->province ?: 'TP. Hồ Chí Minh';
+        $initialDistrict = $defaultAddress?->district ?: 'Quận 1';
+
+        $summary = $this->checkoutService->calculateCartSummary(
+            $cart,
+            $appliedCouponSession,
+            'ZONE_BASED',
+            $initialProvince,
+            $initialDistrict
+        );
 
         // Nếu mã giảm giá trong session hết hạn hoặc không đủ điều kiện đơn tối thiểu thì tự động gỡ
         if ($appliedCouponSession && $summary['appliedCoupon'] === null) {
@@ -91,6 +111,8 @@ class CheckoutController extends Controller
             'cart' => $cart,
             'activeCoupons' => $activeCoupons,
             'successOrder' => $successOrder,
+            'savedAddresses' => $savedAddresses,
+            'defaultAddress' => $defaultAddress,
         ]));
     }
 

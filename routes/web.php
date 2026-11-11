@@ -7,32 +7,35 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - Hệ thống Định tuyến Website Mỹ Phẩm Shine Beauty
+| Web Routes - Hệ thống Định tuyến Website Mỹ Phẩm Shine Beauty (Chuẩn SEO)
 |--------------------------------------------------------------------------
 |
-| Tệp cấu hình toàn bộ các tuyến đường (routes), chức năng và API nội bộ:
-| 1. Cấu hình đa ngôn ngữ & Trang chủ.
-| 2. Danh mục, tìm kiếm & Chi tiết sản phẩm mỹ phẩm.
-| 3. Quản lý giỏ hàng mua sắm (Session & Database).
-| 4. Quy trình thanh toán, mã giảm giá (Voucher) & Tra cứu đơn hàng.
-| 5. Tài khoản & Xác thực dành cho Khách hàng (Đăng ký, Đăng nhập, Quên mật khẩu, Trang cá nhân).
-| 6. Phân hệ Quản trị viên (Admin / Chủ Shop) & Bảng điều khiển kinh doanh.
-| 7. Chuyển hướng tương thích ngược (Redirect 301).
+| Cấu trúc URL chuẩn SEO (kebab-case tiếng Việt không dấu, thân thiện với
+| Google Search & người dùng):
+| 1. Đa ngôn ngữ, Trang chủ & Sitemap / Robots.txt chuẩn SEO.
+| 2. Danh mục, tìm kiếm & Chi tiết sản phẩm mỹ phẩm (/san-pham, /san-pham/{slug}).
+| 3. Quản lý giỏ hàng mua sắm (/gio-hang/them, /gio-hang/cap-nhat, /gio-hang/xoa).
+| 4. Quy trình thanh toán, mã giảm giá & Tra cứu đơn hàng (/thanh-toan, /tra-cuu-don-hang).
+| 5. Tài khoản & Xác thực Khách hàng (Mỗi danh mục là 1 trang riêng biệt dưới /tai-khoan/*).
+| 6. Phân hệ Quản trị viên (Admin / Chủ Shop) dưới /quan-tri/*.
+| 7. Chuyển hướng tương thích ngược chuẩn SEO (HTTP 301 Permanent Redirect).
 |
 */
 
 // =========================================================================
-// 1. ĐA NGÔN NGỮ & TRANG CHỦ WEBSITE
+// 1. ĐA NGÔN NGỮ, TRANG CHỦ & CẤU HÌNH KỸ THUẬT CHUẨN SEO (SITEMAP / ROBOTS)
 // =========================================================================
 
 /**
  * Chuyển đổi ngôn ngữ hiển thị giao diện.
  * - Phương thức: GET
- * - Đường dẫn: /ngon-ngu/{locale}
+ * - Đường dẫn chuẩn: /ngon-ngu/{locale}
  * - Hỗ trợ: 'vi' (Tiếng Việt - mặc định), 'en' (Tiếng Anh)
  */
 Route::get('/ngon-ngu/{locale}', function (string $locale) {
@@ -43,13 +46,88 @@ Route::get('/ngon-ngu/{locale}', function (string $locale) {
 })->name('lang.switch');
 
 /**
- * Trang chủ website bán hàng.
+ * Trang chủ website bán hàng mỹ phẩm Shine Beauty.
  * - Phương thức: GET
- * - Đường dẫn: /
+ * - Đường dẫn chuẩn SEO: /
  * - Controller: HomeController@index
- * - Chức năng: Banner, danh mục, thương hiệu, top 6 bán chạy, lọc theo loại da (Skin Explorer).
+ * - Chức năng: Hiển thị Hero Banner, Danh mục làm đẹp, Thương hiệu đối tác,
+ *              Top 6 sản phẩm bán chạy nhất và Bộ khám phá theo Loại da (Skin Explorer).
  */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+/**
+ * Sitemap XML động chuẩn SEO dành cho công cụ tìm kiếm (Googlebot, Bingbot).
+ * - Phương thức: GET
+ * - Đường dẫn chuẩn SEO: /sitemap.xml
+ * - Chức năng: Liệt kê tự động Trang chủ, Trang cửa hàng, các Danh mục và toàn bộ URL chi tiết sản phẩm.
+ */
+Route::get('/sitemap.xml', function () {
+    $products = Product::select(['slug', 'updated_at'])->latest('updated_at')->get();
+    $categories = Category::select(['slug'])->get();
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+    // Trang chủ & Trang danh sách sản phẩm
+    $staticUrls = [
+        ['loc' => route('home'), 'priority' => '1.0', 'changefreq' => 'daily'],
+        ['loc' => route('products.index'), 'priority' => '0.9', 'changefreq' => 'daily'],
+        ['loc' => route('orders.track'), 'priority' => '0.6', 'changefreq' => 'weekly'],
+    ];
+
+    foreach ($staticUrls as $u) {
+        $xml .= "  <url>\n";
+        $xml .= '    <loc>' . htmlspecialchars($u['loc'], ENT_XML1) . "</loc>\n";
+        $xml .= '    <changefreq>' . $u['changefreq'] . "</changefreq>\n";
+        $xml .= '    <priority>' . $u['priority'] . "</priority>\n";
+        $xml .= "  </url>\n";
+    }
+
+    // Các danh mục sản phẩm
+    foreach ($categories as $cat) {
+        $xml .= "  <url>\n";
+        $xml .= '    <loc>' . htmlspecialchars(route('products.index', ['category' => $cat->slug]), ENT_XML1) . "</loc>\n";
+        $xml .= "    <changefreq>weekly</changefreq>\n";
+        $xml .= "    <priority>0.8</priority>\n";
+        $xml .= "  </url>\n";
+    }
+
+    // Chi tiết từng sản phẩm mỹ phẩm
+    foreach ($products as $prod) {
+        $lastmod = ($prod->updated_at ?? now())->toAtomString();
+        $xml .= "  <url>\n";
+        $xml .= '    <loc>' . htmlspecialchars(route('products.show', $prod->slug), ENT_XML1) . "</loc>\n";
+        $xml .= '    <lastmod>' . $lastmod . "</lastmod>\n";
+        $xml .= "    <changefreq>weekly</changefreq>\n";
+        $xml .= "    <priority>0.8</priority>\n";
+        $xml .= "  </url>\n";
+    }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
+})->name('seo.sitemap');
+
+/**
+ * Tệp robots.txt chuẩn SEO điều hướng bot tìm kiếm.
+ * - Phương thức: GET
+ * - Đường dẫn chuẩn SEO: /robots.txt
+ * - Chức năng: Cho phép lập chỉ mục (index) các trang công khai và chặn index trang quản trị / tài khoản cá nhân.
+ */
+Route::get('/robots.txt', function () {
+    $lines = [
+        'User-agent: *',
+        'Allow: /',
+        'Allow: /san-pham',
+        'Disallow: /quan-tri',
+        'Disallow: /tai-khoan',
+        'Disallow: /thanh-toan',
+        'Disallow: /gio-hang',
+        'Sitemap: ' . route('seo.sitemap'),
+    ];
+
+    return response(implode("\n", $lines), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('seo.robots');
 
 
 // =========================================================================
@@ -223,21 +301,92 @@ Route::post('/quen-mat-khau/gui-ma', [CustomerAuthController::class, 'sendResetC
 Route::post('/quen-mat-khau/dat-lai', [CustomerAuthController::class, 'resetPasswordWithCode'])->name('customer.password.reset');
 
 /**
- * Trung tâm tài khoản cá nhân dành riêng cho Khách hàng.
- * - Phương thức: GET
- * - Đường dẫn: /tai-khoan
- * - Controller: CustomerAuthController@account
- * - Chức năng: Theo dõi đơn hàng theo trạng thái, giỏ hàng đã lưu, sản phẩm đã mua, ví voucher.
+ * Trung tâm tài khoản cá nhân dành riêng cho Khách hàng
+ * (Mỗi danh mục là 1 trang riêng biệt, chuẩn hóa đường dẫn URL thân thiện SEO):
+ * - GET /tai-khoan                     : Trang Tổng Quan Tài Khoản (customer.account)
+ * - GET /tai-khoan/thong-tin-ca-nhan   : Trang Đổi Thông Tin & Xác Thực Email (customer.profile)
+ * - GET /tai-khoan/so-dia-chi          : Trang Sổ Địa Chỉ Nhận Hàng (customer.addresses)
+ * - GET /tai-khoan/yeu-thich           : Trang Danh Mục Sản Phẩm Yêu Thích (customer.wishlist)
+ * - GET /tai-khoan/gio-hang-da-luu     : Trang Giỏ Hàng Đã Lưu (customer.cart)
+ * - GET /tai-khoan/lich-su-don-hang    : Trang Đơn Hàng Của Tôi (customer.orders)
+ * - GET /tai-khoan/kho-ma-giam-gia     : Trang Kho Voucher Ưu Đãi (customer.vouchers)
  */
 Route::get('/tai-khoan', [CustomerAuthController::class, 'account'])->name('customer.account');
+Route::get('/tai-khoan/thong-tin-ca-nhan', [CustomerAuthController::class, 'profile'])->name('customer.profile');
+Route::get('/tai-khoan/so-dia-chi', [CustomerAuthController::class, 'addresses'])->name('customer.addresses');
+Route::get('/tai-khoan/yeu-thich', [CustomerAuthController::class, 'wishlist'])->name('customer.wishlist');
+Route::get('/tai-khoan/gio-hang-da-luu', [CustomerAuthController::class, 'savedCartPage'])->name('customer.cart');
+Route::get('/tai-khoan/lich-su-don-hang', [CustomerAuthController::class, 'orders'])->name('customer.orders');
+Route::get('/tai-khoan/kho-ma-giam-gia', [CustomerAuthController::class, 'vouchers'])->name('customer.vouchers');
 
 /**
- * Áp dụng nhanh voucher từ trang cá nhân vào giỏ hàng.
+ * Cập nhật thông tin cá nhân khách hàng (Họ tên, SĐT, Email kèm xác nhận Email).
+ * - Phương thức: PUT
+ * - Đường dẫn chuẩn: /tai-khoan/thong-tin-ca-nhan
+ * - Controller: CustomerAuthController@updateProfile
+ */
+Route::put('/tai-khoan/thong-tin-ca-nhan', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
+
+/**
+ * Gửi mã OTP 6 chữ số xác nhận địa chỉ Email về hộp thư Gmail của khách hàng.
  * - Phương thức: POST
- * - Đường dẫn: /tai-khoan/ma-giam-gia/ap-dung
+ * - Đường dẫn chuẩn: /tai-khoan/xac-nhan-email/gui-ma
+ * - Controller: CustomerAuthController@sendEmailVerificationOtp
+ */
+Route::post('/tai-khoan/xac-nhan-email/gui-ma', [CustomerAuthController::class, 'sendEmailVerificationOtp'])->name('customer.email.send-otp');
+
+/**
+ * Xem Hộp thư đến Gmail chứa thư mã xác thực OTP vừa gửi tới địa chỉ Gmail của khách hàng.
+ * - Phương thức: GET
+ * - Đường dẫn chuẩn: /tai-khoan/xac-nhan-email/hop-thu-gmail
+ * - Controller: CustomerAuthController@showGmailInbox
+ */
+Route::get('/tai-khoan/xac-nhan-email/hop-thu-gmail', [CustomerAuthController::class, 'showGmailInbox'])->name('customer.email.inbox');
+
+/**
+ * Cấu hình nhanh Gmail SMTP (MAIL_USERNAME & Google App Password) và gửi ngay mã OTP về Gmail.
+ * - Phương thức: POST
+ * - Đường dẫn chuẩn: /tai-khoan/xac-nhan-email/cau-hinh-hom-thu
+ * - Controller: CustomerAuthController@configureGmailSmtp
+ */
+Route::post('/tai-khoan/xac-nhan-email/cau-hinh-hom-thu', [CustomerAuthController::class, 'configureGmailSmtp'])->name('customer.email.configure-smtp');
+
+/**
+ * Xác thực mã OTP 6 chữ số để hoàn tất xác nhận địa chỉ Email của khách hàng.
+ * - Phương thức: POST
+ * - Đường dẫn chuẩn: /tai-khoan/xac-nhan-email
+ * - Controller: CustomerAuthController@verifyEmailOtp
+ */
+Route::post('/tai-khoan/xac-nhan-email', [CustomerAuthController::class, 'verifyEmailOtp'])->name('customer.email.verify');
+
+/**
+ * Quản lý Sổ địa chỉ nhận hàng của khách hàng (Thêm mới, Cập nhật, Đặt làm mặc định, Xóa).
+ * - POST   /tai-khoan/so-dia-chi                     : Thêm địa chỉ nhận hàng mới
+ * - PUT    /tai-khoan/so-dia-chi/{address}           : Cập nhật địa chỉ đã lưu
+ * - PATCH  /tai-khoan/so-dia-chi/{address}/mac-dinh  : Đặt làm địa chỉ nhận hàng mặc định
+ * - DELETE /tai-khoan/so-dia-chi/{address}           : Xóa địa chỉ khỏi sổ địa chỉ
+ */
+Route::post('/tai-khoan/so-dia-chi', [CustomerAuthController::class, 'storeAddress'])->name('customer.addresses.store');
+Route::put('/tai-khoan/so-dia-chi/{address}', [CustomerAuthController::class, 'updateAddress'])->name('customer.addresses.update');
+Route::patch('/tai-khoan/so-dia-chi/{address}/mac-dinh', [CustomerAuthController::class, 'setDefaultAddress'])->name('customer.addresses.default');
+Route::delete('/tai-khoan/so-dia-chi/{address}', [CustomerAuthController::class, 'destroyAddress'])->name('customer.addresses.destroy');
+
+/**
+ * Bật / tắt trạng thái Yêu thích sản phẩm (Nút trái tim trên thẻ sản phẩm & trang chi tiết).
+ * - Phương thức: POST
+ * - Đường dẫn chuẩn: /tai-khoan/yeu-thich/cap-nhat (hỗ trợ cả /yeu-thich/toggle)
+ * - Controller: CustomerAuthController@toggleWishlist
+ */
+Route::post('/tai-khoan/yeu-thich/cap-nhat', [CustomerAuthController::class, 'toggleWishlist'])->name('wishlist.toggle');
+Route::post('/yeu-thich/toggle', [CustomerAuthController::class, 'toggleWishlist'])->name('wishlist.toggle.legacy');
+
+/**
+ * Áp dụng nhanh mã giảm giá (Voucher) từ trang Kho mã giảm giá cá nhân vào giỏ hàng.
+ * - Phương thức: POST
+ * - Đường dẫn chuẩn: /tai-khoan/kho-ma-giam-gia/ap-dung
  * - Controller: CustomerAuthController@applyVoucherToCart
  */
-Route::post('/tai-khoan/ma-giam-gia/ap-dung', [CustomerAuthController::class, 'applyVoucherToCart'])->name('customer.voucher.apply');
+Route::post('/tai-khoan/kho-ma-giam-gia/ap-dung', [CustomerAuthController::class, 'applyVoucherToCart'])->name('customer.voucher.apply');
 
 
 // =========================================================================
@@ -409,8 +558,9 @@ Route::post('/quan-tri/thuong-hieu', [AdminController::class, 'storeBrand'])->na
 
 
 // =========================================================================
-// 7. CHUYỂN HƯỚNG TỰ ĐỘNG CÁC ĐƯỜNG DẪN TIẾNG ANH CŨ SANG TIẾNG VIỆT MỚI (301)
+// 7. CHUYỂN HƯỚNG TỰ ĐỘNG (HTTP 301 PERMANENT REDIRECT) CHUẨN SEO
 // =========================================================================
+// Chuyển hướng các đường dẫn tiếng Anh hoặc đường dẫn rút gọn cũ sang đường dẫn chuẩn SEO:
 Route::redirect('/products', '/san-pham', 301);
 Route::get('/products/{slug}', fn (string $slug) => redirect()->route('products.show', $slug, 301));
 Route::redirect('/checkout', '/thanh-toan', 301);
@@ -418,5 +568,12 @@ Route::redirect('/my-orders', '/tra-cuu-don-hang', 301);
 Route::redirect('/login', '/dang-nhap', 301);
 Route::redirect('/forgot-password', '/quen-mat-khau', 301);
 Route::redirect('/account', '/tai-khoan', 301);
+Route::redirect('/tai-khoan/thong-tin', '/tai-khoan/thong-tin-ca-nhan', 301);
+Route::redirect('/tai-khoan/dia-chi', '/tai-khoan/so-dia-chi', 301);
+Route::redirect('/tai-khoan/gio-hang', '/tai-khoan/gio-hang-da-luu', 301);
+Route::redirect('/tai-khoan/don-hang', '/tai-khoan/lich-su-don-hang', 301);
+Route::redirect('/tai-khoan/voucher', '/tai-khoan/kho-ma-giam-gia', 301);
+Route::redirect('/tai-khoan/ma-giam-gia', '/tai-khoan/kho-ma-giam-gia', 301);
+Route::redirect('/wishlist', '/tai-khoan/yeu-thich', 301);
 Route::redirect('/admin', '/quan-tri', 301);
 Route::redirect('/admin/login', '/quan-tri/dang-nhap', 301);

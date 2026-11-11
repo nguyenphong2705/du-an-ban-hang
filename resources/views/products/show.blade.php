@@ -1,15 +1,80 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' | Shine Beauty')
-
-@section('content')
 @php
     $finalPrice = $product->sale_price ?? $product->price;
     $discountPercent = ($product->sale_price && $product->sale_price < $product->price)
         ? round((($product->price - $product->sale_price) / $product->price) * 100)
         : null;
-    $ingredientsList = array_filter(array_map('trim', explode(',', $product->ingredients)));
+    $ingredientsList = array_filter(array_map('trim', explode(',', (string) $product->ingredients)));
+    $seoDescription = \Illuminate\Support\Str::limit(strip_tags((string) $product->description), 155, '...');
 @endphp
+
+@section('title', $product->name . ' - Chính Hãng ' . ($product->brand->name ?? 'Shine Beauty') . ' | Shine Beauty')
+@section('meta_description', $seoDescription ?: ($product->name . ' chính hãng tại Shine Beauty. Dành cho ' . $product->skin_type . ', dung tích ' . $product->volume . '.'))
+@section('meta_keywords', implode(', ', array_filter([$product->name, $product->brand->name ?? '', $product->category->name ?? '', $product->skin_type, 'mỹ phẩm chính hãng', 'Shine Beauty'])))
+@section('canonical', route('products.show', $product->slug))
+@section('og_type', 'product')
+@section('og_image', $product->first_image)
+
+@push('structured_data')
+<!-- Dữ liệu có cấu trúc Schema.org Product & BreadcrumbList chuẩn Google Rich Snippets -->
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@graph": [
+        {
+            "@@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@@type": "ListItem",
+                    "position": 1,
+                    "name": "Trang chủ",
+                    "item": "{{ route('home') }}"
+                },
+                {
+                    "@@type": "ListItem",
+                    "position": 2,
+                    "name": "{{ $product->category->name }}",
+                    "item": "{{ route('products.index', ['category' => $product->category->slug]) }}"
+                },
+                {
+                    "@@type": "ListItem",
+                    "position": 3,
+                    "name": "{{ $product->name }}",
+                    "item": "{{ route('products.show', $product->slug) }}"
+                }
+            ]
+        },
+        {
+            "@@type": "Product",
+            "name": "{{ $product->name }}",
+            "sku": "{{ $product->product_code }}",
+            "image": ["{{ $product->first_image }}"],
+            "description": "{{ addslashes($seoDescription) }}",
+            "brand": {
+                "@@type": "Brand",
+                "name": "{{ $product->brand->name ?? 'Shine Beauty' }}"
+            },
+            "offers": {
+                "@@type": "Offer",
+                "url": "{{ route('products.show', $product->slug) }}",
+                "priceCurrency": "VND",
+                "price": "{{ (int) $finalPrice }}",
+                "availability": "{{ $product->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}",
+                "itemCondition": "https://schema.org/NewCondition"
+            },
+            "aggregateRating": {
+                "@@type": "AggregateRating",
+                "ratingValue": "{{ number_format((float) $product->rating, 1, '.', '') }}",
+                "reviewCount": "{{ max(1, (int) $product->reviews_count) }}"
+            }
+        }
+    ]
+}
+</script>
+@endpush
+
+@section('content')
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
     <!-- Breadcrumbs -->
@@ -34,7 +99,7 @@
                      alt="{{ $product->name }}"
                      class="w-full h-full object-cover">
                 @if($discountPercent)
-                    <span class="absolute top-4 left-4 bg-wine-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md border border-wine-600">
+                    <span class="absolute top-4 left-4 bg-terracotta-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md border border-terracotta-500">
                         Tiết kiệm {{ $discountPercent }}%
                     </span>
                 @endif
@@ -122,7 +187,10 @@
             </div>
 
             <!-- Add to Cart / Buy Now Form -->
-            <form action="{{ route('cart.add') }}" method="POST" class="flex flex-wrap items-center gap-4 pt-2">
+            @php
+                $isProductFavorited = auth()->check() && in_array((int) $product->id, $wishlistProductIds ?? [], true);
+            @endphp
+            <form action="{{ route('cart.add') }}" method="POST" class="flex flex-wrap items-center gap-3.5 pt-2">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
 
@@ -131,12 +199,23 @@
                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="20" class="w-14 text-center font-bold text-sm text-stone-800 focus:outline-none">
                 </div>
 
-                <button type="submit" class="flex-1 min-w-[180px] bg-white hover:bg-sage-50 text-sage-600 border-2 border-sage-500 font-semibold py-3.5 px-6 rounded-full transition text-sm">
+                <button type="submit" class="flex-1 min-w-[160px] bg-white hover:bg-sage-50 text-sage-600 border-2 border-sage-500 font-semibold py-3.5 px-5 rounded-full transition text-sm cursor-pointer">
                     + Thêm Vào Giỏ Hàng
                 </button>
 
-                <button type="submit" name="buy_now" value="1" class="flex-1 min-w-[180px] bg-sage-500 hover:bg-sage-600 text-white font-semibold py-3.5 px-6 rounded-full shadow-lg shadow-sage-200 transition text-sm">
+                <button type="submit" name="buy_now" value="1" class="flex-1 min-w-[160px] bg-sage-500 hover:bg-sage-600 text-white font-semibold py-3.5 px-5 rounded-full shadow-lg shadow-sage-200 transition text-sm cursor-pointer">
                     Mua Ngay →
+                </button>
+
+                <button type="button"
+                    data-wishlist-btn="{{ $product->id }}"
+                    data-favorited="{{ $isProductFavorited ? '1' : '0' }}"
+                    onclick="toggleWishlistProduct({{ $product->id }}, this)"
+                    title="{{ $isProductFavorited ? 'Bỏ yêu thích sản phẩm này' : 'Thêm vào danh mục Yêu Thích' }}"
+                    class="w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer flex-shrink-0 {{ $isProductFavorited ? 'opacity-100 bg-red-50 text-red-500 border-red-300 shadow-md shadow-red-200/80 ring-2 ring-red-400/50 scale-105' : 'opacity-40 hover:opacity-95 bg-white text-stone-400 hover:text-red-500 border-stone-200' }}">
+                    <svg class="w-6 h-6 transition-transform duration-200" viewBox="0 0 24 24" fill="{{ $isProductFavorited ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
                 </button>
             </form>
         </div>

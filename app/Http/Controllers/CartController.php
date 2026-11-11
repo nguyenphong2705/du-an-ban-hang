@@ -191,6 +191,10 @@ class CartController extends Controller
             session()->put('cart', $cart);
         }
 
+        if ($request->boolean('open_drawer')) {
+            session()->flash('open_cart_drawer', true);
+        }
+
         return back()->with('success', 'Đã cập nhật số lượng giỏ hàng.');
     }
 
@@ -218,6 +222,10 @@ class CartController extends Controller
             CartItem::where('user_id', Auth::id())
                 ->where('product_id', (int) $id)
                 ->delete();
+        }
+
+        if ($request->boolean('open_drawer')) {
+            session()->flash('open_cart_drawer', true);
         }
 
         return back()->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');

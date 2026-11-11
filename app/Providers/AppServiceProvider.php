@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Wishlist;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,9 +23,31 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         try {
+            \App\Models\User::ensureCustomerFeaturesSchema();
             \App\Models\Product::ensureUnder500kProductsSeeded();
         } catch (\Throwable) {
             // Bỏ qua nếu bảng chưa được migrate
         }
+
+        View::composer('*', function ($view): void {
+            static $cachedWishlistIds = null;
+
+            if ($cachedWishlistIds === null) {
+                $cachedWishlistIds = [];
+                try {
+                    if (Auth::check()) {
+                        $cachedWishlistIds = Wishlist::query()
+                            ->where('user_id', Auth::id())
+                            ->pluck('product_id')
+                            ->map(fn ($id) => (int) $id)
+                            ->all();
+                    }
+                } catch (\Throwable) {
+                    $cachedWishlistIds = [];
+                }
+            }
+
+            $view->with('wishlistProductIds', $cachedWishlistIds);
+        });
     }
 }

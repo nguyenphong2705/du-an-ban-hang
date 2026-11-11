@@ -7,12 +7,16 @@ use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\UserAddress;
+use App\Models\Wishlist;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -197,7 +201,8 @@ class CustomerAuthController extends Controller
         // Gửi mã xác thực qua Email (Laravel Mailer) & ghi log SMS Gateway
         if (in_array($channel, ['both', 'email'], true) && !empty($user->email)) {
             try {
-                Mail::raw(
+                $this->applyRuntimeGmailConfig();
+                Mail::mailer('smtp')->raw(
                     "Xin chào {$user->name},\n\nMã xác thực đặt lại mật khẩu Shine Beauty của bạn là: {$otpCode}\nMã có hiệu lực trong 10 phút.\n\nTrân trọng,\nShine Beauty",
                     function ($message) use ($user) {
                         $message->to($user->email)
@@ -299,12 +304,61 @@ class CustomerAuthController extends Controller
      */
     public function account(Request $request)
     {
+        return $this->renderCustomerAccountSection($request, 'overview');
+    }
+
+    /**
+     * Trang riêng: Đổi Thông Tin & Xác Thực Email (/tai-khoan/thong-tin).
+     */
+    public function profile(Request $request)
+    {
+        return $this->renderCustomerAccountSection($request, 'profile');
+    }
+
+    /**
+     * Trang riêng: Sổ Địa Chỉ Nhận Hàng (/tai-khoan/dia-chi).
+     */
+    public function addresses(Request $request)
+    {
+        return $this->renderCustomerAccountSection($request, 'addresses');
+    }
+
+    /**
+     * Trang riêng: Giỏ Hàng Đã Lưu (/tai-khoan/gio-hang).
+     */
+    public function savedCartPage(Request $request)
+    {
+        return $this->renderCustomerAccountSection($request, 'cart');
+    }
+
+    /**
+     * Trang riêng: Đơn Hàng Của Tôi (/tai-khoan/don-hang).
+     */
+    public function orders(Request $request)
+    {
+        return $this->renderCustomerAccountSection($request, 'orders');
+    }
+
+    /**
+     * Trang riêng: Kho Voucher Ưu Đãi (/tai-khoan/voucher).
+     */
+    public function vouchers(Request $request)
+    {
+        return $this->renderCustomerAccountSection($request, 'vouchers');
+    }
+
+    /**
+     * Hiển thị từng trang danh mục riêng biệt trong phần Tài khoản khách hàng.
+     */
+    private function renderCustomerAccountSection(Request $request, string $activeSection): View|RedirectResponse
+    {
         if (!Auth::check()) {
             return redirect()->route('customer.login')
                 ->with('error', 'Vui lòng đăng nhập tài khoản khách hàng để theo dõi đơn hàng, giỏ hàng & voucher.');
         }
 
         $user = Auth::user();
+        $user->ensureAddressesInitialized();
 
         // Đồng bộ giỏ hàng đã lưu trong DB với session
         $savedCart = CartController::syncUserCartToSession($user);
@@ -348,8 +402,21 @@ class CustomerAuthController extends Controller
 
         $appliedCoupon = session('applied_coupon');
 
+        // Sổ địa chỉ đã lưu của khách hàng
+        $addresses = $user->addresses()->get();
+
+        // Danh sách sản phẩm yêu thích của khách hàng
+        $wishlistProducts = $user->wishlistProducts()
+            ->with(['brand', 'category'])
+            ->get();
+
+        $smtpConfig = $this->applyRuntimeGmailConfig();
+        $gmailSmtpConfigured = !empty($smtpConfig['username']) && !empty($smtpConfig['password']);
+        $gmailSmtpSender = $smtpConfig['username'] ?? '';
+
         return view('customer.account', compact(
             'user',
+            'activeSection',
             'savedCart',
             'savedCartTotal',
             'allMyOrders',
@@ -358,8 +425,674 @@ class CustomerAuthController extends Controller
             'purchasedProducts',
             'featuredProducts',
             'activeCoupons',
-            'appliedCoupon'
+            'appliedCoupon',
+            'addresses',
+            'wishlistProducts',
+            'gmailSmtpConfigured',
+            'gmailSmtpSender'
         ));
+    }
+
+    /**
+     * Cập nhật thông tin cá nhân của khách hàng: Họ tên, SĐT, Email (có xác nhận Email).
+     */
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'regex:/^(0|\+84)[0-9]{8,10}$/'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'email_confirmation' => ['required', 'email', 'same:email'],
+        ], [
+            'name.required' => 'Vui lòng nhập họ và tên của bạn.',
+            'phone.required' => 'Vui lòng nhập số điện thoại liên hệ.',
+            'phone.regex' => 'Số điện thoại không hợp lệ (VD: 0909123456).',
+            'email.required' => 'Vui lòng nhập địa chỉ Email.',
+            'email.email' => 'Định dạng Email không hợp lệ.',
+            'email.unique' => 'Địa chỉ Email này đã được sử dụng bởi tài khoản khác.',
+            'email_confirmation.required' => 'Vui lòng nhập lại Email để xác nhận.',
+            'email_confirmation.same' => 'Xác nhận Email không khớp với Email đã nhập.',
+        ]);
+
+        $newEmail = trim($validated['email']);
+        $emailChanged = strcasecmp($newEmail, (string) $user->email) !== 0;
+
+        $updateData = [
+            'name' => trim($validated['name']),
+            'phone' => preg_replace('/[^0-9+]/', '', $validated['phone']),
+            'email' => $newEmail,
+        ];
+
+        if ($emailChanged) {
+            $updateData['email_verified_at'] = null;
+        }
+
+        $user->update($updateData);
+
+        if ($emailChanged) {
+            $this->dispatchEmailVerificationCode($user);
+
+            return redirect()->route('customer.profile')
+                ->with('success', "Đã cập nhật thông tin cá nhân! Mã xác thực 6 số đã được gửi về hộp thư Gmail ({$user->email}). Vui lòng mở Hộp thư đến Gmail bên dưới để lấy mã xác nhận.");
+        }
+
+        return redirect()->route('customer.profile')
+            ->with('success', 'Đã cập nhật thông tin tài khoản (Họ tên, Số điện thoại & Email) thành công!');
+    }
+
+    /**
+     * Gửi mã OTP 6 chữ số trực tiếp về hộp thư Gmail của khách hàng.
+     */
+    public function sendEmailVerificationOtp(Request $request): RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $this->dispatchEmailVerificationCode($user);
+
+        return redirect()->route('customer.profile')
+            ->with('success', "Đã gửi mã xác thực 6 số về hộp thư Gmail ({$user->email}). Vui lòng bấm \"Mở Hộp Thư Đến Gmail\" bên dưới để xem thư và lấy mã 6 số!");
+    }
+
+    /**
+     * Hiển thị giao diện Hộp thư đến Gmail của khách hàng chứa thư mã xác thực OTP 6 số.
+     */
+    public function showGmailInbox(Request $request): View|RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $otpSession = session('email_verification_otp');
+
+        if (!$otpSession || (int) ($otpSession['user_id'] ?? 0) !== (int) $user->id) {
+            $this->dispatchEmailVerificationCode($user);
+            $otpSession = session('email_verification_otp');
+        }
+
+        $email = $otpSession['email'] ?? $user->email;
+
+        return view('customer.gmail-inbox', compact('user', 'email', 'otpSession'));
+    }
+
+    /**
+     * Lưu cấu hình Gmail SMTP (MAIL_USERNAME & Google App Password 16 ký tự) và gửi ngay mã OTP về Gmail.
+     */
+    public function configureGmailSmtp(Request $request): RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        $validated = $request->validate([
+            'smtp_email' => ['required', 'email', 'max:255'],
+            'smtp_app_password' => ['required', 'string', 'min:8', 'max:100'],
+        ], [
+            'smtp_email.required' => 'Vui lòng nhập địa chỉ Gmail dùng để gửi mã (MAIL_USERNAME).',
+            'smtp_email.email' => 'Địa chỉ Gmail không hợp lệ.',
+            'smtp_app_password.required' => 'Vui lòng nhập Mật khẩu ứng dụng Google 16 ký tự (App Password).',
+        ]);
+
+        $smtpEmail = trim($validated['smtp_email']);
+        // Loại bỏ khoảng trắng trong mật khẩu ứng dụng Google (VD: "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
+        $smtpAppPassword = preg_replace('/\s+/', '', trim($validated['smtp_app_password']));
+
+        $configPath = storage_path('app/gmail_smtp.json');
+        @file_put_contents($configPath, json_encode([
+            'host' => 'smtp.gmail.com',
+            'port' => 587,
+            'username' => $smtpEmail,
+            'password' => $smtpAppPassword,
+            'from_address' => $smtpEmail,
+            'from_name' => 'Shine Beauty',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        $this->persistMailEnvVariables($smtpEmail, $smtpAppPassword);
+
+        /** @var User $user */
+        $user = Auth::user();
+        $result = $this->dispatchEmailVerificationCode($user);
+
+        if (!$result['sent']) {
+            return redirect()->route('customer.profile')
+                ->with('error', "Đã lưu cấu hình nhưng gửi thử tới Gmail ({$user->email}) thất bại: {$result['error']}");
+        }
+
+        return redirect()->route('customer.profile')
+            ->with('success', "Đã kết nối Gmail SMTP ({$smtpEmail}) và gửi mã xác thực 6 số về hộp thư Gmail ({$user->email}) thành công! Vui lòng kiểm tra hộp thư Gmail của bạn.");
+    }
+
+    /**
+     * Xác thực mã OTP 6 chữ số để đánh dấu Email đã được xác nhận (email_verified_at).
+     */
+    public function verifyEmailOtp(Request $request): RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        $validated = $request->validate([
+            'email_otp' => ['required', 'string', 'size:6'],
+        ], [
+            'email_otp.required' => 'Vui lòng nhập mã xác nhận Email 6 số.',
+            'email_otp.size' => 'Mã xác nhận Email phải gồm đúng 6 chữ số.',
+        ]);
+
+        /** @var User $user */
+        $user = Auth::user();
+        $otpState = session('email_verification_otp');
+
+        if (
+            !$otpState
+            || (int) ($otpState['user_id'] ?? 0) !== (int) $user->id
+            || now()->timestamp > (int) ($otpState['expires_at'] ?? 0)
+        ) {
+            session()->forget('email_verification_otp');
+            return redirect()->route('customer.profile')
+                ->with('error', 'Mã xác nhận Email đã hết hạn hoặc chưa được yêu cầu. Vui lòng bấm "Gửi mã xác nhận về Gmail".');
+        }
+
+        if (trim($validated['email_otp']) !== (string) $otpState['code']) {
+            return redirect()->route('customer.profile')
+                ->with('error', 'Mã xác nhận Email không chính xác. Vui lòng kiểm tra lại hộp thư Gmail của bạn.');
+        }
+
+        $user->update([
+            'email_verified_at' => now(),
+        ]);
+        session()->forget('email_verification_otp');
+
+        return redirect()->route('customer.profile')
+            ->with('success', "Xác nhận địa chỉ Email ({$user->email}) thành công! ✓");
+    }
+
+    /**
+     * Đọc cấu hình Gmail SMTP trực tiếp từ .env và storage/app/gmail_smtp.json
+     * rồi nạp vào runtime config của Laravel Mailer mà không cần khởi động lại Docker.
+     */
+    private function applyRuntimeGmailConfig(): array
+    {
+        $envVars = [];
+        $envFile = base_path('.env');
+        if (is_file($envFile) && is_readable($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+            foreach ($lines as $line) {
+                $trimmed = trim($line);
+                if ($trimmed === '' || str_starts_with($trimmed, '#') || !str_contains($trimmed, '=')) {
+                    continue;
+                }
+                [$key, $val] = explode('=', $trimmed, 2);
+                $key = trim($key);
+                $val = trim($val);
+                if (
+                    (str_starts_with($val, '"') && str_ends_with($val, '"'))
+                    || (str_starts_with($val, "'") && str_ends_with($val, "'"))
+                ) {
+                    $val = substr($val, 1, -1);
+                }
+                $envVars[$key] = $val;
+            }
+        }
+
+        $host = $envVars['MAIL_HOST'] ?? env('MAIL_HOST', 'smtp.gmail.com');
+        $port = (int) ($envVars['MAIL_PORT'] ?? env('MAIL_PORT', 587));
+        $username = trim((string) ($envVars['MAIL_USERNAME'] ?? env('MAIL_USERNAME', '')));
+        $password = preg_replace('/\s+/', '', trim((string) ($envVars['MAIL_PASSWORD'] ?? env('MAIL_PASSWORD', ''))));
+        $fromAddress = trim((string) ($envVars['MAIL_FROM_ADDRESS'] ?? env('MAIL_FROM_ADDRESS', '')));
+        $fromName = trim((string) ($envVars['MAIL_FROM_NAME'] ?? env('MAIL_FROM_NAME', 'Shine Beauty')));
+
+        $jsonPath = storage_path('app/gmail_smtp.json');
+        if (is_file($jsonPath) && is_readable($jsonPath)) {
+            $saved = json_decode((string) file_get_contents($jsonPath), true);
+            if (is_array($saved)) {
+                if ($username === '' && !empty($saved['username'])) {
+                    $username = trim((string) $saved['username']);
+                }
+                if ($password === '' && !empty($saved['password'])) {
+                    $password = preg_replace('/\s+/', '', trim((string) $saved['password']));
+                }
+            }
+        }
+
+        if ($fromAddress === '' || $fromAddress === 'no-reply@shinebeauty.vn' || $fromAddress === 'hello@example.com') {
+            if ($username !== '') {
+                $fromAddress = $username;
+            }
+        }
+
+        config([
+            'mail.default' => 'smtp',
+            'mail.mailers.smtp.transport' => 'smtp',
+            'mail.mailers.smtp.host' => $host ?: 'smtp.gmail.com',
+            'mail.mailers.smtp.port' => $port ?: 587,
+            'mail.mailers.smtp.username' => $username,
+            'mail.mailers.smtp.password' => $password,
+            'mail.mailers.smtp.timeout' => 15,
+            'mail.from.address' => $fromAddress ?: 'no-reply@shinebeauty.vn',
+            'mail.from.name' => $fromName ?: 'Shine Beauty',
+        ]);
+
+        try {
+            Mail::purge('smtp');
+        } catch (\Throwable $e) {
+            // Ignore purge error if mailer not yet resolved
+        }
+
+        return [
+            'host' => $host ?: 'smtp.gmail.com',
+            'port' => $port ?: 587,
+            'username' => $username,
+            'password' => $password,
+            'from_address' => $fromAddress ?: $username,
+            'from_name' => $fromName ?: 'Shine Beauty',
+        ];
+    }
+
+    /**
+     * Lưu MAIL_USERNAME và MAIL_PASSWORD vào file .env.
+     */
+    private function persistMailEnvVariables(string $smtpEmail, string $smtpAppPassword): void
+    {
+        $envFile = base_path('.env');
+        if (!is_file($envFile) || !is_writable($envFile)) {
+            return;
+        }
+
+        $content = (string) file_get_contents($envFile);
+        $replacements = [
+            'MAIL_MAILER' => 'smtp',
+            'MAIL_HOST' => 'smtp.gmail.com',
+            'MAIL_PORT' => '587',
+            'MAIL_USERNAME' => $smtpEmail,
+            'MAIL_PASSWORD' => $smtpAppPassword,
+            'MAIL_ENCRYPTION' => 'tls',
+            'MAIL_FROM_ADDRESS' => '"' . $smtpEmail . '"',
+            'MAIL_FROM_NAME' => '"Shine Beauty"',
+        ];
+
+        foreach ($replacements as $key => $value) {
+            $pattern = "/^{$key}=.*$/m";
+            if (preg_match($pattern, $content)) {
+                $content = (string) preg_replace($pattern, "{$key}={$value}", $content);
+            } else {
+                $content = rtrim($content) . "\n{$key}={$value}\n";
+            }
+        }
+
+        @file_put_contents($envFile, $content);
+    }
+
+    /**
+     * Sinh mã OTP 6 chữ số và gửi email HTML trực tiếp tới hộp thư Gmail của khách hàng.
+     *
+     * @return array{code: string, sent: bool, smtp_sent: bool, error: string|null}
+     */
+    private function dispatchEmailVerificationCode(User $user): array
+    {
+        $code = (string) random_int(100000, 999999);
+        $smtpConfig = $this->applyRuntimeGmailConfig();
+
+        $escapedName = e($user->name);
+        $escapedEmail = e($user->email);
+        $htmlBody = <<<HTML
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #FAF9F6; padding: 32px 24px; border-radius: 20px; border: 1px solid #E2ECE7; color: #292524;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <span style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B8E7B; background: #E8F2EC; padding: 6px 14px; border-radius: 999px;">
+                    Shine Beauty • Xác Thực Tài Khoản
+                </span>
+                <h2 style="margin: 12px 0 4px; font-size: 22px; color: #1C1917;">Mã Xác Thực Địa Chỉ Email</h2>
+                <p style="margin: 0; font-size: 13px; color: #78716C;">Gửi tới hộp thư: <strong>{$escapedEmail}</strong></p>
+            </div>
+
+            <div style="background-color: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E7E5E4; text-align: center;">
+                <p style="margin: 0 0 14px; font-size: 14px; color: #44403C; line-height: 1.6;">
+                    Xin chào <strong>{$escapedName}</strong>,<br>
+                    Bạn vừa yêu cầu xác thực địa chỉ Email cho tài khoản khách hàng tại <strong>Shine Beauty</strong>. Đây là mã xác nhận 6 chữ số của bạn:
+                </p>
+
+                <div style="margin: 20px auto; display: inline-block; background-color: #FDF5F2; border: 2px dashed #C85A32; border-radius: 14px; padding: 14px 32px;">
+                    <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #B04A25;">
+                        {$code}
+                    </span>
+                </div>
+
+                <p style="margin: 14px 0 0; font-size: 12px; color: #78716C;">
+                    ⏳ Mã xác thực có hiệu lực trong vòng <strong>15 phút</strong>. Vui lòng không chia sẻ mã này cho bất kỳ ai.
+                </p>
+            </div>
+
+            <p style="margin: 20px 0 0; text-align: center; font-size: 12px; color: #A8A29E;">
+                © Shine Beauty Cosmetics — Chăm sóc làn da Việt chính hãng.
+            </p>
+        </div>
+        HTML;
+
+        $smtpSent = false;
+        $smtpError = null;
+
+        if (!empty($smtpConfig['username']) && !empty($smtpConfig['password'])) {
+            try {
+                Mail::mailer('smtp')->html($htmlBody, function ($message) use ($user, $code) {
+                    $message->to($user->email, $user->name)
+                        ->subject("[Shine Beauty] Mã xác thực Email của bạn: {$code}");
+                });
+                $smtpSent = true;
+            } catch (\Throwable $e) {
+                Log::warning('Send email verification OTP via Gmail SMTP failed: ' . $e->getMessage());
+                $smtpError = 'Không thể kết nối Gmail SMTP (' . $e->getMessage() . '). Hãy kiểm tra lại địa chỉ Gmail và Mật khẩu ứng dụng Google 16 ký tự (App Password).';
+            }
+        } else {
+            // Ghi nhận thư vào hệ thống Hộp thư Gmail nội bộ & Log Mailer khi chưa cấu hình App Password ngoài
+            try {
+                Mail::mailer('log')->html($htmlBody, function ($message) use ($user, $code) {
+                    $message->to($user->email, $user->name)
+                        ->subject("[Shine Beauty] Mã xác thực Email của bạn: {$code}");
+                });
+            } catch (\Throwable $e) {
+                // Ignore log mailer error
+            }
+        }
+
+        session([
+            'email_verification_otp' => [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'code' => $code,
+                'sent_at' => now()->format('H:i d/m/Y'),
+                'expires_at' => now()->addMinutes(15)->timestamp,
+                'mail_sent' => true,
+                'smtp_sent' => $smtpSent,
+                'mail_error' => $smtpError,
+            ],
+        ]);
+
+        return [
+            'code' => $code,
+            'sent' => $smtpError === null,
+            'smtp_sent' => $smtpSent,
+            'error' => $smtpError,
+        ];
+    }
+
+    /**
+     * Thêm địa chỉ nhận hàng mới vào Sổ địa chỉ của khách hàng.
+     */
+    public function storeAddress(Request $request): RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $user->ensureAddressesInitialized();
+
+        $validated = $request->validate([
+            'label' => ['required', 'string', 'max:100'],
+            'recipient_name' => ['nullable', 'string', 'max:255'],
+            'recipient_phone' => ['nullable', 'string', 'max:30'],
+            'street_address' => ['required', 'string', 'max:300'],
+            'ward' => ['required', 'string', 'max:150'],
+            'district' => ['required', 'string', 'max:150'],
+            'province' => ['required', 'string', 'max:150'],
+            'is_default' => ['nullable', 'boolean'],
+        ], [
+            'street_address.required' => 'Vui lòng nhập số nhà, tên đường.',
+            'ward.required' => 'Vui lòng nhập Phường/Xã.',
+            'district.required' => 'Vui lòng nhập Quận/Huyện.',
+            'province.required' => 'Vui lòng nhập Tỉnh/Thành phố.',
+        ]);
+
+        $parts = array_filter([
+            trim($validated['street_address']),
+            trim($validated['ward']),
+            trim($validated['district']),
+            trim($validated['province']),
+        ]);
+        $fullAddress = implode(', ', $parts);
+
+        $isDefault = $request->boolean('is_default') || $user->addresses()->count() === 0;
+
+        if ($isDefault) {
+            $user->addresses()->update(['is_default' => false]);
+            $user->update(['address' => $fullAddress]);
+        }
+
+        $user->addresses()->create([
+            'label' => trim($validated['label']),
+            'recipient_name' => trim((string) ($validated['recipient_name'] ?? '')) ?: $user->name,
+            'recipient_phone' => trim((string) ($validated['recipient_phone'] ?? '')) ?: $user->phone,
+            'street_address' => trim($validated['street_address']),
+            'ward' => trim($validated['ward']),
+            'district' => trim($validated['district']),
+            'province' => trim($validated['province']),
+            'address' => $fullAddress,
+            'is_default' => $isDefault,
+        ]);
+
+        return redirect()->route('customer.addresses')
+            ->with('success', 'Đã thêm địa chỉ nhận hàng mới vào Sổ địa chỉ của bạn!');
+    }
+
+    /**
+     * Cập nhật một địa chỉ nhận hàng trong Sổ địa chỉ.
+     */
+    public function updateAddress(Request $request, UserAddress $address): RedirectResponse
+    {
+        if (!Auth::check() || (int) $address->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'label' => ['required', 'string', 'max:100'],
+            'recipient_name' => ['nullable', 'string', 'max:255'],
+            'recipient_phone' => ['nullable', 'string', 'max:30'],
+            'street_address' => ['required', 'string', 'max:300'],
+            'ward' => ['required', 'string', 'max:150'],
+            'district' => ['required', 'string', 'max:150'],
+            'province' => ['required', 'string', 'max:150'],
+            'is_default' => ['nullable', 'boolean'],
+        ]);
+
+        $parts = array_filter([
+            trim($validated['street_address']),
+            trim($validated['ward']),
+            trim($validated['district']),
+            trim($validated['province']),
+        ]);
+        $fullAddress = implode(', ', $parts);
+
+        $makeDefault = $request->boolean('is_default') || $address->is_default;
+
+        if ($makeDefault) {
+            $user->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
+            $user->update(['address' => $fullAddress]);
+        }
+
+        $address->update([
+            'label' => trim($validated['label']),
+            'recipient_name' => trim((string) ($validated['recipient_name'] ?? '')) ?: $user->name,
+            'recipient_phone' => trim((string) ($validated['recipient_phone'] ?? '')) ?: $user->phone,
+            'street_address' => trim($validated['street_address']),
+            'ward' => trim($validated['ward']),
+            'district' => trim($validated['district']),
+            'province' => trim($validated['province']),
+            'address' => $fullAddress,
+            'is_default' => $makeDefault,
+        ]);
+
+        return redirect()->route('customer.addresses')
+            ->with('success', "Đã cập nhật địa chỉ \"{$address->label}\" thành công!");
+    }
+
+    /**
+     * Đặt một địa chỉ làm Địa chỉ Mặc Định của khách hàng.
+     */
+    public function setDefaultAddress(Request $request, UserAddress $address): RedirectResponse|JsonResponse
+    {
+        if (!Auth::check() || (int) $address->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        $user->addresses()->update(['is_default' => false]);
+        $address->update(['is_default' => true]);
+        $user->update(['address' => $address->address]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'ok',
+                'message' => "Đã đặt \"{$address->label}\" làm địa chỉ nhận hàng mặc định!",
+                'address' => $address,
+            ]);
+        }
+
+        if ($request->boolean('from_checkout')) {
+            return redirect()->route('checkout.index')
+                ->with('success', "Đã chọn và đặt \"{$address->label}\" ({$address->address}) làm địa chỉ mặc định!");
+        }
+
+        return redirect()->route('customer.addresses')
+            ->with('success', "Đã đặt \"{$address->label}\" làm địa chỉ nhận hàng mặc định!");
+    }
+
+    /**
+     * Xóa một địa chỉ khỏi Sổ địa chỉ của khách hàng.
+     */
+    public function destroyAddress(Request $request, UserAddress $address): RedirectResponse
+    {
+        if (!Auth::check() || (int) $address->user_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($user->addresses()->count() <= 1) {
+            return redirect()->route('customer.addresses')
+                ->with('error', 'Bạn cần giữ lại ít nhất 1 địa chỉ mặc định trong sổ địa chỉ.');
+        }
+
+        $wasDefault = $address->is_default;
+        $address->delete();
+
+        if ($wasDefault) {
+            $nextAddress = $user->addresses()->first();
+            if ($nextAddress) {
+                $nextAddress->update(['is_default' => true]);
+                $user->update(['address' => $nextAddress->address]);
+            }
+        }
+
+        return redirect()->route('customer.addresses')
+            ->with('success', 'Đã xóa địa chỉ khỏi sổ địa chỉ.');
+    }
+
+    /**
+     * Trang Danh mục mới: Yêu Thích (/tai-khoan/yeu-thich) trong phần tài khoản của khách hàng.
+     */
+    public function wishlist(Request $request): View|RedirectResponse
+    {
+        if (!Auth::check()) {
+            return redirect()->route('customer.login')
+                ->with('error', 'Vui lòng đăng nhập tài khoản khách hàng để xem danh mục sản phẩm Yêu Thích.');
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        $user->ensureAddressesInitialized();
+
+        $wishlistProducts = $user->wishlistProducts()
+            ->with(['brand', 'category'])
+            ->get();
+
+        $savedCart = session('cart', []);
+        $savedCartTotal = collect($savedCart)->sum(fn ($i) => $i['price'] * $i['quantity']);
+        $ordersCount = Order::where('user_id', $user->id)->orWhere('phone', $user->phone)->count();
+        $couponsCount = Coupon::where('is_active', true)->count();
+
+        return view('customer.wishlist', compact(
+            'user',
+            'wishlistProducts',
+            'savedCart',
+            'savedCartTotal',
+            'ordersCount',
+            'couponsCount'
+        ));
+    }
+
+    /**
+     * Bật / tắt trạng thái Yêu thích sản phẩm (Nút trái tim).
+     */
+    public function toggleWishlist(Request $request): RedirectResponse|JsonResponse
+    {
+        if (!Auth::check()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'unauthenticated',
+                    'message' => 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào danh mục Yêu Thích.',
+                ], 401);
+            }
+
+            return redirect()->route('customer.login')
+                ->with('error', 'Vui lòng đăng nhập tài khoản để thêm sản phẩm vào danh mục Yêu Thích.');
+        }
+
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+        ]);
+
+        $userId = (int) Auth::id();
+        $productId = (int) $validated['product_id'];
+        $product = Product::find($productId);
+
+        $existing = Wishlist::where('user_id', $userId)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            $favorited = false;
+            $message = "Đã bỏ \"{$product?->name}\" khỏi danh mục Yêu Thích.";
+        } else {
+            Wishlist::create([
+                'user_id' => $userId,
+                'product_id' => $productId,
+            ]);
+            $favorited = true;
+            $message = "Đã thêm \"{$product?->name}\" vào danh mục Yêu Thích! ❤️";
+        }
+
+        $wishlistCount = Wishlist::where('user_id', $userId)->count();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'ok',
+                'favorited' => $favorited,
+                'count' => $wishlistCount,
+                'product_id' => $productId,
+                'message' => $message,
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**

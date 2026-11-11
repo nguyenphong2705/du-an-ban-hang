@@ -1,14 +1,88 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
+    <!-- =====================================================================
+         1. CẤU HÌNH META CHUẨN SEO, OPEN GRAPH & TWITTER CARD
+         ===================================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))</title>
+    <meta name="description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100% từ Pháp, Hàn Quốc, Nhật Bản. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'mỹ phẩm chính hãng, chăm sóc da, serum, kem dưỡng ẩm, chống nắng, trang điểm, nước hoa, Shine Beauty')">
+    <meta name="author" content="Shine Beauty Cosmetics">
+    <meta name="robots" content="@yield('meta_robots', 'index, follow, max-image-preview:large, max-snippet:-1')">
+    <meta name="theme-color" content="#4A947A">
+
+    <!-- Canonical URL & Đa ngôn ngữ (Hreflang) chuẩn SEO -->
+    <link rel="canonical" href="@yield('canonical', url()->current())">
+    <link rel="alternate" hreflang="vi" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="en" href="{{ url()->current() }}">
+    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
+
+    <!-- Open Graph (Facebook / Zalo / Social Sharing) -->
+    <meta property="og:site_name" content="Shine Beauty Cosmetics">
+    <meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'vi_VN' }}">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:title" content="@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
+    <meta property="og:description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
+    <meta property="og:url" content="@yield('canonical', url()->current())">
+    <meta property="og:image" content="@yield('og_image', asset('logo.png'))">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
+    <meta name="twitter:description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%.')">
+    <meta name="twitter:image" content="@yield('og_image', asset('logo.png'))">
+
+    <!-- Favicon & Fonts -->
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
+
+    <!-- =====================================================================
+         2. DỮ LIỆU CÓ CẤU TRÚC JSON-LD (SCHEMA.ORG) CHUẨN GOOGLE RICH SNIPPETS
+         ===================================================================== -->
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@graph": [
+            {
+                "@@type": "Store",
+                "@@id": "{{ route('home') }}#organization",
+                "name": "Shine Beauty Cosmetics",
+                "url": "{{ route('home') }}",
+                "logo": "{{ asset('logo.png') }}",
+                "image": "{{ asset('logo.png') }}",
+                "description": "Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản.",
+                "telephone": "1900-6868",
+                "priceRange": "₫₫",
+                "address": {
+                    "@@type": "PostalAddress",
+                    "streetAddress": "28 Phạm Văn Chiêu, Phường Thông Tây Hội",
+                    "addressLocality": "TP. Hồ Chí Minh",
+                    "addressCountry": "VN"
+                }
+            },
+            {
+                "@@type": "WebSite",
+                "@@id": "{{ route('home') }}#website",
+                "url": "{{ route('home') }}",
+                "name": "Shine Beauty",
+                "publisher": {
+                    "@@id": "{{ route('home') }}#organization"
+                },
+                "potentialAction": {
+                    "@@type": "SearchAction",
+                    "target": "{{ route('products.index') }}?search={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                }
+            }
+        ]
+    }
+    </script>
+    @stack('structured_data')
     <script>
         const sageMintPalette = {
             50: '#F2F9F6',
@@ -22,6 +96,19 @@
             800: '#274F42',
             900: '#214237',
             950: '#11251E',
+        };
+        const terracottaPalette = {
+            50: '#FDF5F2',
+            100: '#FBE8E1',
+            200: '#F6D0C2',
+            300: '#EEB09A',
+            400: '#E28768',
+            500: '#D46542',
+            600: '#C04E2C',
+            700: '#9E3E22',
+            800: '#82341F',
+            900: '#6B2D1D',
+            950: '#3A150C',
         };
         tailwind.config = {
             theme: {
@@ -45,19 +132,8 @@
                             800: '#185E3F',
                             900: '#154E35',
                         },
-                        wine: {
-                            50: '#FDF2F4',
-                            100: '#FCE4E8',
-                            200: '#F8C9D2',
-                            300: '#F19EAE',
-                            400: '#E56982',
-                            500: '#B8334C',
-                            600: '#8F243A',
-                            700: '#722F37',
-                            800: '#5E1924',
-                            900: '#4A121B',
-                            950: '#2D090F',
-                        }
+                        terracotta: terracottaPalette,
+                        wine: terracottaPalette
                     }
                 }
             }
@@ -76,18 +152,24 @@
         $cartTotal = collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']);
     @endphp
 
-    <!-- Top Announcement Bar -->
+    <!-- =====================================================================
+         3. THANH THÔNG BÁO ĐẦU TRANG (TOP ANNOUNCEMENT BAR)
+         ===================================================================== -->
     <div class="bg-gradient-to-r from-sage-200/80 via-sage-100 to-sage-200/80 text-sage-900 text-xs py-2 px-4 text-center font-medium tracking-wide">
         {{ __('✨ Shine Beauty — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
     </div>
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-40 bg-[#F5FAF7]/95 backdrop-blur-md border-b border-sage-100">
+    <!-- =====================================================================
+         4. THANH ĐIỀU HƯỚNG CHÍNH (HEADER NAVIGATION BAR CHUẨN SEO SEMANTIC)
+         - Gồm: Logo thương hiệu, Menu chính, Chuyển đổi ngôn ngữ (VI/EN),
+           Nút Hồ sơ hiển thị Tên khách hàng và Nút mở Giỏ hàng nhanh.
+         ===================================================================== -->
+    <header role="banner" class="sticky top-0 z-40 bg-[#F5FAF7]/95 backdrop-blur-md border-b border-sage-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
-                <!-- Logo -->
-                <a href="{{ route('home') }}" class="flex items-center gap-3 group">
-                    <img src="{{ asset('logo.png') }}?v=2" alt="Shine Beauty Logo" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
+                <!-- Logo Thương Hiệu -->
+                <a href="{{ route('home') }}" class="flex items-center gap-3 group" aria-label="Shine Beauty - Trang chủ">
+                    <img src="{{ asset('logo.png') }}?v=2" alt="Shine Beauty Logo" width="64" height="64" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
                     <div>
                         <span class="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-stone-800">
                             Shine <span class="text-sage-500 font-normal italic">Beauty</span>
@@ -98,36 +180,18 @@
                     </div>
                 </a>
 
-                <!-- Desktop Nav -->
-                <nav class="hidden md:flex items-center gap-5 text-sm font-medium">
+                <!-- Menu Điều Hướng Chính (Desktop Navigation) -->
+                <nav aria-label="Điều hướng chính" class="hidden md:flex items-center gap-5 text-sm font-medium">
                     <a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'text-sage-600 font-semibold' : 'text-stone-700 hover:text-sage-500' }}">{{ __('Trang Chủ') }}</a>
                     <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') && !request('category') ? 'text-sage-600 font-semibold' : 'text-stone-700 hover:text-sage-500' }}">{{ __('Sản Phẩm') }}</a>
                     <a href="{{ route('products.index', ['category' => 'cham-soc-da']) }}" class="{{ request('category') === 'cham-soc-da' ? 'text-sage-600 font-semibold' : 'text-stone-700 hover:text-sage-500' }}">{{ __('Chăm Sóc Da') }}</a>
                     <a href="{{ route('orders.track') }}" class="{{ request()->routeIs('orders.track') ? 'text-sage-600 font-semibold' : 'text-stone-700 hover:text-sage-500' }}">{{ __('Tra Cứu Đơn Hàng') }}</a>
-
-                    @if(auth()->check() && !auth()->user()->is_admin)
-                        <a href="{{ route('customer.account') }}" class="text-xs font-bold bg-sage-500 hover:bg-sage-600 text-white px-3.5 py-2 rounded-full transition shadow-xs">
-                            👤 {{ auth()->user()->username ?? auth()->user()->name }} ({{ __('Đơn & Voucher') }})
-                        </a>
-                    @else
-                        <button type="button" onclick="openAuthModal('login')" class="text-xs font-bold bg-sage-100 hover:bg-sage-200 text-sage-800 px-3.5 py-2 rounded-full transition border border-sage-200 cursor-pointer">
-                            👤 {{ __('Đăng Nhập / Đăng Ký') }}
-                        </button>
-                    @endif
                 </nav>
 
-                <!-- Language Switcher & Cart Button -->
-                <div class="flex items-center gap-2.5">
-                    @if(auth()->check() && !auth()->user()->is_admin)
-                        <a href="{{ route('customer.account') }}" class="md:hidden text-xs font-bold bg-sage-500 hover:bg-sage-600 text-white px-3 py-2 rounded-full transition shadow-xs">
-                            👤
-                        </a>
-                    @else
-                        <button type="button" onclick="openAuthModal('login')" class="md:hidden text-xs font-bold bg-sage-100 hover:bg-sage-200 text-sage-800 px-3 py-2 rounded-full transition border border-sage-200 cursor-pointer" title="{{ __('Đăng Nhập / Đăng Ký') }}">
-                            👤
-                        </button>
-                    @endif
-                    <div class="inline-flex items-center rounded-full bg-white border border-sage-200 p-0.5 shadow-2xs text-xs font-bold">
+                <!-- Cụm Chức Năng Phải: Ngôn Ngữ (VI/EN) + Hồ Sơ Khách Hàng (Hiển thị Tên) + Giỏ Hàng -->
+                <div class="flex items-center gap-2 sm:gap-2.5">
+                    <!-- Bộ chuyển đổi ngôn ngữ VI / EN -->
+                    <div class="inline-flex items-center rounded-full bg-white border border-sage-200 p-0.5 shadow-2xs text-xs font-bold" role="group" aria-label="Chuyển đổi ngôn ngữ">
                         <a href="{{ route('lang.switch', 'vi') }}"
                            title="Tiếng Việt (Mặc định)"
                            class="px-2.5 py-1.5 rounded-full transition flex items-center gap-1.5 {{ app()->getLocale() === 'vi' ? 'bg-[#DA251D] text-white shadow-2xs' : 'text-stone-600 hover:text-[#DA251D]' }}">
@@ -151,7 +215,25 @@
                         </a>
                     </div>
 
-                    <button type="button" onclick="document.getElementById('cart-drawer').classList.remove('hidden')" class="relative flex items-center gap-2 bg-sage-50 hover:bg-sage-100 text-sage-700 px-4 py-2.5 rounded-full font-medium text-sm transition shadow-sm border border-sage-200/60">
+                    <!-- Nút Hồ sơ tài khoản khách hàng (Đặt kế bên chuyển đổi ngôn ngữ, hiển thị Họ và tên thay vì username) -->
+                    @if(auth()->check() && !auth()->user()->is_admin)
+                        <a href="{{ route('customer.account') }}"
+                           class="inline-flex items-center gap-1.5 text-xs font-bold {{ request()->routeIs('customer.*') ? 'bg-sage-600' : 'bg-sage-500 hover:bg-sage-600' }} text-white px-3 sm:px-3.5 py-2 rounded-full transition shadow-xs"
+                           title="Tài khoản của {{ auth()->user()->name }}">
+                            <span class="text-sm">👤</span>
+                            <span class="max-w-[110px] sm:max-w-[160px] md:max-w-[200px] truncate">{{ auth()->user()->name }}</span>
+                        </a>
+                    @else
+                        <button type="button" onclick="openAuthModal('login')"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold bg-sage-100 hover:bg-sage-200 text-sage-800 px-3 sm:px-3.5 py-2 rounded-full transition border border-sage-200 cursor-pointer"
+                                title="{{ __('Đăng Nhập / Đăng Ký') }}">
+                            <span class="text-sm">👤</span>
+                            <span class="hidden sm:inline">{{ __('Đăng Nhập / Đăng Ký') }}</span>
+                        </button>
+                    @endif
+
+                    <!-- Nút mở Ngăn kéo Giỏ hàng (Slide-over Cart Drawer) -->
+                    <button type="button" onclick="document.getElementById('cart-drawer').classList.remove('hidden')" class="relative flex items-center gap-2 bg-sage-50 hover:bg-sage-100 text-sage-700 px-4 py-2.5 rounded-full font-medium text-sm transition shadow-sm border border-sage-200/60 cursor-pointer">
                         <span>🛍️ {{ __('Giỏ Hàng') }}</span>
                         <span class="bg-sage-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                             {{ $cartCount }}
@@ -162,9 +244,11 @@
         </div>
     </header>
 
-    <!-- Flash Notifications -->
+    <!-- =====================================================================
+         5. THÔNG BÁO HỆ THỐNG (FLASH NOTIFICATIONS)
+         ===================================================================== -->
     @if(session('success'))
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" role="status">
             <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-3.5 rounded-2xl text-sm font-medium flex items-center justify-between shadow-sm">
                 <span>✓ {{ session('success') }}</span>
                 <a href="{{ route('checkout.index') }}" class="text-xs font-bold text-sage-600 hover:underline ml-4">Xem giỏ hàng & Thanh toán →</a>
@@ -173,20 +257,27 @@
     @endif
 
     @if(session('error'))
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" role="alert">
             <div class="bg-red-50 border border-red-200 text-red-700 px-5 py-3.5 rounded-2xl text-sm font-medium">
                 ⚠ {{ session('error') }}
             </div>
         </div>
     @endif
 
-    <!-- Main Content -->
-    <main class="flex-1">
+    <!-- =====================================================================
+         6. NỘI DUNG CHÍNH CỦA TRANG (MAIN CONTENT LANDMARK CHUẨN SEO)
+         ===================================================================== -->
+    <main id="main-content" role="main" class="flex-1">
         @yield('content')
     </main>
 
-    <!-- Slide-over Cart Drawer -->
-    <div id="cart-drawer" class="fixed inset-0 z-50 hidden">
+    <!-- =====================================================================
+         7. NGĂN KÉO GIỎ HÀNG TRƯỢT NGANG (SLIDE-OVER CART DRAWER)
+         - Cho phép tăng (+) / giảm (−) số lượng từng sản phẩm ngay trong giỏ.
+         - Thanh tiến trình ưu đãi miễn phí vận chuyển dùng màu Terracotta nổi bật
+           khi đơn hàng chưa đạt 500.000₫.
+         ===================================================================== -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 {{ session('open_cart_drawer') ? '' : 'hidden' }}">
         <div class="fixed inset-0 bg-stone-900/40 backdrop-blur-xs" onclick="document.getElementById('cart-drawer').classList.add('hidden')"></div>
         <aside class="fixed top-0 right-0 h-full w-full max-w-md bg-[#F5FAF7] shadow-2xl border-l border-sage-100 flex flex-col justify-between z-10">
             <div class="p-6 border-b border-sage-100 flex items-center justify-between bg-white">
@@ -205,12 +296,35 @@
                             <p class="text-[11px] font-bold uppercase text-sage-500">{{ $item['brand_name'] ?? 'Shine' }}</p>
                             <a href="{{ route('products.show', $item['slug']) }}" class="text-sm font-semibold text-stone-800 hover:text-sage-600 line-clamp-1">{{ $item['name'] }}</a>
                             <p class="text-xs text-stone-400">{{ $item['volume'] }} • {{ $item['skin_type'] }}</p>
+                            <p class="text-sm font-bold text-sage-600 mt-1">
+                                {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}₫
+                                @if($item['quantity'] > 1)
+                                    <span class="text-[11px] font-normal text-stone-400">({{ number_format($item['price'], 0, ',', '.') }}₫ x {{ $item['quantity'] }})</span>
+                                @endif
+                            </p>
                             <div class="flex items-center justify-between mt-2">
-                                <span class="text-sm font-bold text-sage-600">{{ number_format($item['price'], 0, ',', '.') }}₫ x {{ $item['quantity'] }}</span>
+                                <div class="inline-flex items-center border border-sage-200 rounded-full bg-[#F5FAF7] px-1 py-0.5">
+                                    <form action="{{ route('cart.update') }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="product_id" value="{{ $item['id'] }}">
+                                        <input type="hidden" name="quantity" value="{{ $item['quantity'] - 1 }}">
+                                        <input type="hidden" name="open_drawer" value="1">
+                                        <button type="submit" title="Giảm 1 sản phẩm" class="w-6 h-6 rounded-full hover:bg-sage-200/70 text-stone-700 hover:text-sage-700 font-bold text-xs flex items-center justify-center transition cursor-pointer">−</button>
+                                    </form>
+                                    <span class="w-7 text-center text-xs font-bold text-stone-800">{{ $item['quantity'] }}</span>
+                                    <form action="{{ route('cart.update') }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="product_id" value="{{ $item['id'] }}">
+                                        <input type="hidden" name="quantity" value="{{ $item['quantity'] + 1 }}">
+                                        <input type="hidden" name="open_drawer" value="1">
+                                        <button type="submit" title="Tăng 1 sản phẩm" class="w-6 h-6 rounded-full hover:bg-sage-200/70 text-stone-700 hover:text-sage-700 font-bold text-xs flex items-center justify-center transition cursor-pointer">+</button>
+                                    </form>
+                                </div>
                                 <form action="{{ route('cart.remove') }}" method="POST">
                                     @csrf
                                     <input type="hidden" name="product_id" value="{{ $item['id'] }}">
-                                    <button type="submit" class="text-xs text-stone-400 hover:text-red-500">Xóa</button>
+                                    <input type="hidden" name="open_drawer" value="1">
+                                    <button type="submit" class="text-xs text-stone-400 hover:text-red-500 cursor-pointer">Xóa</button>
                                 </form>
                             </div>
                         </div>
@@ -230,18 +344,18 @@
                     $drawerProgressPercent = min(100, (int) round(($cartTotal / 500000) * 100));
                 @endphp
                 <div class="p-6 bg-white border-t border-sage-100 space-y-3.5">
-                    <div class="bg-[#F5FAF7] border border-sage-100 rounded-2xl p-3 space-y-1.5 text-xs">
+                    <div class="{{ $drawerFreeShipDiff > 0 ? 'bg-terracotta-50/80 border-terracotta-200' : 'bg-[#F5FAF7] border-sage-100' }} border rounded-2xl p-3 space-y-1.5 text-xs">
                         @if($drawerFreeShipDiff > 0)
-                            <p class="text-stone-600">
-                                🚚 Mua thêm <strong class="text-sage-600">{{ number_format($drawerFreeShipDiff, 0, ',', '.') }}₫</strong> để được <strong>Miễn phí vận chuyển toàn quốc</strong> (đơn từ 500.000₫)
+                            <p class="text-terracotta-900">
+                                🚚 Mua thêm <strong class="text-terracotta-600 font-bold">{{ number_format($drawerFreeShipDiff, 0, ',', '.') }}₫</strong> để được <strong>Miễn phí vận chuyển toàn quốc</strong> (đơn từ 500.000₫)
                             </p>
                         @else
                             <p class="text-emerald-700 font-semibold">
                                 ✨ Đơn hàng đủ điều kiện <strong>Miễn phí vận chuyển toàn quốc</strong>!
                             </p>
                         @endif
-                        <div class="w-full h-1.5 bg-sage-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-sage-500 rounded-full transition-all duration-300" style="width: {{ $drawerProgressPercent }}%"></div>
+                        <div class="w-full h-2 {{ $drawerFreeShipDiff > 0 ? 'bg-terracotta-100' : 'bg-sage-100' }} rounded-full overflow-hidden">
+                            <div class="h-full {{ $drawerFreeShipDiff > 0 ? 'bg-terracotta-600' : 'bg-sage-500' }} rounded-full transition-all duration-300" style="width: {{ $drawerProgressPercent }}%"></div>
                         </div>
                     </div>
 
@@ -561,6 +675,104 @@
             </div>
         </div>
     </footer>
+
+    <div id="wishlist-toast" class="fixed bottom-5 right-5 z-50 hidden bg-stone-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-xl border border-stone-700 flex items-center gap-2.5 transition-all duration-300">
+        <span id="wishlist-toast-text"></span>
+        <a href="{{ route('customer.wishlist') }}" class="text-red-400 hover:underline font-bold ml-2 flex-shrink-0">Xem Yêu Thích →</a>
+    </div>
+
+    <script>
+        const IS_CUSTOMER_LOGGED_IN = {{ auth()->check() ? 'true' : 'false' }};
+        let wishlistToastTimeout = null;
+
+        function showWishlistToast(message) {
+            const toast = document.getElementById('wishlist-toast');
+            const textEl = document.getElementById('wishlist-toast-text');
+            if (!toast || !textEl) return;
+            textEl.textContent = message;
+            toast.classList.remove('hidden');
+            if (wishlistToastTimeout) clearTimeout(wishlistToastTimeout);
+            wishlistToastTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3200);
+        }
+
+        async function toggleWishlistProduct(productId, btn) {
+            if (!IS_CUSTOMER_LOGGED_IN) {
+                if (typeof openAuthModal === 'function') {
+                    openAuthModal('login');
+                } else {
+                    window.location.href = "{{ route('customer.login') }}";
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch("{{ route('wishlist.toggle') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ product_id: productId })
+                });
+
+                if (res.status === 401) {
+                    if (typeof openAuthModal === 'function') {
+                        openAuthModal('login');
+                    } else {
+                        window.location.href = "{{ route('customer.login') }}";
+                    }
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.status !== 'ok') return;
+
+                const isFav = Boolean(data.favorited);
+
+                // Cập nhật toàn bộ nút trái tim của sản phẩm này trên trang
+                document.querySelectorAll(`[data-wishlist-btn="${productId}"]`).forEach(el => {
+                    el.setAttribute('data-favorited', isFav ? '1' : '0');
+                    el.title = isFav ? 'Bỏ yêu thích sản phẩm này' : 'Thêm vào danh mục Yêu Thích';
+
+                    const activeClasses = ['opacity-100', 'bg-red-50', 'text-red-500', 'border-red-300', 'shadow-md', 'shadow-red-200/80', 'ring-2', 'ring-red-400/50', 'scale-105'];
+                    const inactiveClasses = ['opacity-40', 'hover:opacity-95', 'bg-white/80', 'bg-white', 'text-stone-400', 'hover:text-red-500', 'border-stone-200/80', 'border-stone-200'];
+
+                    if (isFav) {
+                        el.classList.remove(...inactiveClasses);
+                        el.classList.add(...activeClasses);
+                    } else {
+                        el.classList.remove(...activeClasses);
+                        el.classList.add('opacity-40', 'hover:opacity-95', 'bg-white/80', 'text-stone-400', 'hover:text-red-500', 'border-stone-200/80');
+                    }
+
+                    const svg = el.querySelector('svg');
+                    if (svg) {
+                        svg.setAttribute('fill', isFav ? 'currentColor' : 'none');
+                    }
+                });
+
+                // Nếu đang ở trang Danh mục Yêu Thích và bỏ yêu thích thì ẩn thẻ sản phẩm
+                if (!isFav) {
+                    const wishlistItemCard = document.getElementById(`wishlist-item-card-${productId}`);
+                    if (wishlistItemCard) {
+                        wishlistItemCard.remove();
+                    }
+                }
+
+                // Cập nhật bộ đếm số lượng Yêu Thích
+                document.querySelectorAll('[data-wishlist-count]').forEach(badge => {
+                    badge.textContent = data.count;
+                });
+
+                showWishlistToast(data.message);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    </script>
 
     @include('partials.i18n-en')
 </body>

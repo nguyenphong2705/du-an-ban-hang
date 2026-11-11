@@ -23,6 +23,19 @@
             900: '#214237',
             950: '#11251E',
         };
+        const terracottaPalette = {
+            50: '#FDF5F2',
+            100: '#FBE8E1',
+            200: '#F6D0C2',
+            300: '#EEB09A',
+            400: '#E28768',
+            500: '#D46542',
+            600: '#C04E2C',
+            700: '#9E3E22',
+            800: '#82341F',
+            900: '#6B2D1D',
+            950: '#3A150C',
+        };
         tailwind.config = {
             theme: {
                 extend: {
@@ -45,19 +58,8 @@
                             800: '#185E3F',
                             900: '#154E35',
                         },
-                        wine: {
-                            50: '#FDF2F4',
-                            100: '#FCE4E8',
-                            200: '#F8C9D2',
-                            300: '#F19EAE',
-                            400: '#E56982',
-                            500: '#B8334C',
-                            600: '#8F243A',
-                            700: '#722F37',
-                            800: '#5E1924',
-                            900: '#4A121B',
-                            950: '#2D090F',
-                        }
+                        terracotta: terracottaPalette,
+                        wine: terracottaPalette
                     }
                 }
             }
@@ -942,18 +944,18 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @foreach($coupons as $coupon)
-                        <div class="p-4 rounded-2xl border {{ $coupon->is_active ? 'border-wine-200 bg-gradient-to-r from-wine-50 via-white to-wine-50/60' : 'border-stone-200 bg-stone-100 opacity-70' }} flex items-center justify-between gap-2">
+                        <div class="p-4 rounded-2xl border {{ $coupon->is_active ? 'border-terracotta-200 bg-gradient-to-r from-terracotta-50 via-white to-terracotta-50/60' : 'border-stone-200 bg-stone-100 opacity-70' }} flex items-center justify-between gap-2">
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono font-bold text-base text-wine-900">{{ $coupon->code }}</span>
-                                    <span class="text-xs font-bold bg-wine-700 text-white px-2 py-0.5 rounded-full">
+                                    <span class="font-mono font-bold text-base text-terracotta-900">{{ $coupon->code }}</span>
+                                    <span class="text-xs font-bold bg-terracotta-600 text-white px-2 py-0.5 rounded-full">
                                         -{{ $coupon->discount_percent }}%
                                     </span>
                                 </div>
                                 <p class="text-[11px] text-stone-600 mt-1 line-clamp-1">{{ $coupon->description }}</p>
                                 <p class="text-[11px] text-stone-400 mt-0.5">
                                     HSD: {{ $coupon->expires_at?->format('d/m/Y') }}
-                                    • <strong class="{{ $coupon->is_active ? 'text-wine-700' : 'text-stone-500' }}">{{ $coupon->is_active ? 'Đang bật' : 'Đã tắt' }}</strong>
+                                    • <strong class="{{ $coupon->is_active ? 'text-terracotta-700' : 'text-stone-500' }}">{{ $coupon->is_active ? 'Đang bật' : 'Đã tắt' }}</strong>
                                 </p>
                             </div>
 
