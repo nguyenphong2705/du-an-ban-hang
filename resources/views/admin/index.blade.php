@@ -353,8 +353,8 @@
                             <form action="{{ route('admin.products.best-seller', $prod) }}" method="POST" class="flex-shrink-0">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="text-[11px] font-bold px-2.5 py-1 rounded-xl border transition {{ $prod->is_best_seller ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-stone-100 text-stone-500 border-stone-200' }}">
-                                    {{ $prod->is_best_seller ? '★ Best Seller' : 'Đặt Best Seller' }}
+                                <button type="submit" class="text-[11px] font-bold px-2.5 py-1 rounded-xl border transition {{ $prod->is_best_seller ? 'bg-[#D4728C] text-white border-[#C25E79]' : 'bg-stone-100 text-stone-500 border-stone-200' }}">
+                                    {{ $prod->is_best_seller ? '✦ Best Seller' : 'Đặt Best Seller' }}
                                 </button>
                             </form>
                         </div>
@@ -847,7 +847,7 @@
                                         <span class="text-[10px] font-bold uppercase text-sage-500">{{ $product->brand->name ?? '' }}</span>
                                         <span class="text-[10px] text-stone-400">• {{ $product->category->name ?? '' }}</span>
                                         @if($product->is_best_seller)
-                                            <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">★ Bán chạy</span>
+                                            <span class="text-[10px] bg-[#D4728C] text-white border border-[#C25E79] font-bold px-2 py-0.5 rounded-full">✦ Best Seller</span>
                                         @endif
                                         @if($product->stock <= 0)
                                             <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-full">HẾT HÀNG</span>

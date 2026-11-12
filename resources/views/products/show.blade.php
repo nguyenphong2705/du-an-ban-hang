@@ -126,6 +126,11 @@
                     <span class="text-xs font-mono font-bold bg-stone-900 text-white px-3 py-1 rounded-full">
                         Mã SP: {{ $product->product_code }}
                     </span>
+                    @if($product->is_best_seller)
+                        <span class="inline-flex items-center gap-1 bg-[#D4728C] text-white text-xs font-semibold px-3 py-1 rounded-full shadow-2xs border border-[#C25E79]">
+                            ✦ Best Seller
+                        </span>
+                    @endif
                     <span class="text-xs font-bold uppercase tracking-widest text-sage-600 bg-sage-100/80 px-3 py-1 rounded-full">
                         {{ $product->brand->name }} ({{ $product->brand->origin }})
                     </span>

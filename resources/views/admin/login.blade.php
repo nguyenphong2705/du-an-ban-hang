@@ -134,6 +134,31 @@
                     Đăng Nhập Trang Quản Trị Viên (/quan-tri) →
                 </button>
             </form>
+
+            <!-- Quick Fill Admin Accounts -->
+            <div class="pt-4 border-t border-stone-800 space-y-2.5 text-xs">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-sage-400">
+                    🔑 Thông tin tài khoản Quản trị viên (Bấm để điền nhanh):
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="button"
+                        onclick="document.getElementById('email-input').value='admin'; document.getElementById('password-input').value='Admin@123456';"
+                        class="text-left p-3 rounded-2xl bg-stone-950/90 hover:bg-stone-800 border border-stone-800 hover:border-sage-500/50 transition cursor-pointer">
+                        <p class="font-bold text-white">TK 1: Chủ Shop</p>
+                        <p class="text-stone-400 font-mono text-[11px] mt-0.5">User: <strong class="text-sage-300">admin</strong></p>
+                        <p class="text-stone-400 font-mono text-[11px]">Email: <strong class="text-sage-300">admin@luminabeauty.vn</strong></p>
+                        <p class="text-stone-400 font-mono text-[11px]">Pass: <strong class="text-amber-300">Admin@123456</strong></p>
+                    </button>
+                    <button type="button"
+                        onclick="document.getElementById('email-input').value='nguyenphong2705'; document.getElementById('password-input').value='Admin@123456';"
+                        class="text-left p-3 rounded-2xl bg-stone-950/90 hover:bg-stone-800 border border-stone-800 hover:border-sage-500/50 transition cursor-pointer">
+                        <p class="font-bold text-white">TK 2: Nguyễn Phong</p>
+                        <p class="text-stone-400 font-mono text-[11px] mt-0.5">User: <strong class="text-sage-300">nguyenphong2705</strong></p>
+                        <p class="text-stone-400 font-mono text-[11px]">Email: <strong class="text-sage-300">phongdev3979@gmail.com</strong></p>
+                        <p class="text-stone-400 font-mono text-[11px]">Pass: <strong class="text-amber-300">Admin@123456</strong></p>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="flex items-center justify-between text-xs text-stone-400 px-2">

@@ -19,7 +19,7 @@
 
             <div class="absolute top-3 left-3 flex flex-col gap-1.5 pointer-events-none">
                 @if($product->is_best_seller)
-                    <span class="inline-flex items-center gap-1 bg-sage-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-xs">
+                    <span class="inline-flex items-center gap-1 bg-[#D4728C] text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-xs border border-[#C25E79]">
                         ✦ Best Seller
                     </span>
                 @endif

@@ -110,6 +110,19 @@
             900: '#6B2D1D',
             950: '#3A150C',
         };
+        const dustyPinkPalette = {
+            50: '#FDF4F6',
+            100: '#FAE8EC',
+            200: '#F5D2DA',
+            300: '#ECAFBE',
+            400: '#DF8A9F',
+            500: '#D4728C',
+            600: '#BF5874',
+            700: '#A1445E',
+            800: '#863A50',
+            900: '#723446',
+            950: '#401924',
+        };
         tailwind.config = {
             theme: {
                 extend: {
@@ -120,6 +133,7 @@
                     colors: {
                         sage: sageMintPalette,
                         rose: sageMintPalette,
+                        dustypink: dustyPinkPalette,
                         mint: {
                             50: '#F0FDF7',
                             100: '#DCFCEB',

@@ -47,8 +47,8 @@
                         <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1000&q=85" alt="Shine Beauty Skincare Collection" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-stone-900/50 via-transparent to-transparent flex items-end p-8">
                             <div class="bg-white/95 backdrop-blur-md p-5 rounded-2xl w-full shadow-lg">
-                                <p class="text-xs font-bold uppercase tracking-wider text-sage-500">Best Seller Tuần Này</p>
-                                <p class="font-serif font-bold text-stone-800 text-base mt-0.5">Serum Hyaluronic Acid 2% + B5 Cấp Ẩm Đa Tầng</p>
+                                <span class="inline-flex items-center gap-1 bg-[#D4728C] text-white text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs border border-[#C25E79]">✦ Best Seller Tuần Này</span>
+                                <p class="font-serif font-bold text-stone-800 text-base mt-1.5">Serum Hyaluronic Acid 2% + B5 Cấp Ẩm Đa Tầng</p>
                                 <p class="text-xs text-stone-500 mt-1">Phục hồi màng ẩm tự nhiên chỉ sau 7 ngày</p>
                             </div>
                         </div>

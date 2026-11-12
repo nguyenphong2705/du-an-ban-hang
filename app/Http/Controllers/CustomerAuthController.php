@@ -42,8 +42,10 @@ class CustomerAuthController extends Controller
      */
     public function showLogin()
     {
-        if (Auth::check() && !Auth::user()->is_admin) {
-            return redirect()->route('customer.account');
+        if (Auth::check()) {
+            return Auth::user()->is_admin
+                ? redirect()->route('admin.index')
+                : redirect()->route('customer.account');
         }
 
         return view('customer.login');
@@ -69,6 +71,9 @@ class CustomerAuthController extends Controller
         ]);
 
         $loginInput = trim($validated['login']);
+        if (strcasecmp($loginInput, 'admin@shinebeauty.vn') === 0) {
+            $loginInput = 'admin@luminabeauty.vn';
+        }
         $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         $user = User::where('email', $loginInput)
@@ -78,6 +83,11 @@ class CustomerAuthController extends Controller
         if ($user && Hash::check($validated['password'], $user->password)) {
             Auth::login($user, $request->boolean('remember', true));
             $request->session()->regenerate();
+
+            if ($user->is_admin) {
+                return redirect()->route('admin.index')
+                    ->with('success', "Chào mừng Quản trị viên {$user->name} đã đăng nhập vào hệ thống quản trị Shop!");
+            }
 
             // Đồng bộ giỏ hàng đã lưu từ trước trong PostgreSQL ra Session
             CartController::syncUserCartToSession($user);

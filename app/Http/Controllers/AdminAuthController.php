@@ -57,6 +57,9 @@ class AdminAuthController extends Controller
         ]);
 
         $loginInput = trim($validated['email']);
+        if (strcasecmp($loginInput, 'admin@shinebeauty.vn') === 0) {
+            $loginInput = 'admin@luminabeauty.vn';
+        }
         $remember = $request->boolean('remember', true);
 
         $user = User::where('email', $loginInput)

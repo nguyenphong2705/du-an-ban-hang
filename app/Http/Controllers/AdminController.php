@@ -162,9 +162,13 @@ class AdminController extends Controller
         $cancelledOrdersCount = $allOrders->where('status', 'CANCELLED')->count();
 
         // Cảnh báo kho hàng
-        $outOfStockCount = $allProducts->where('stock', '<=', 0)->count();
-        $lowStockCount = $allProducts->where('stock', '>', 0)->where('stock', '<=', 15)->count();
+        $outOfStockProducts = $allProducts->where('stock', '<=', 0)->values();
+        $lowStockProducts = $allProducts->where('stock', '>', 0)->where('stock', '<=', 15)->values();
+        $outOfStockCount = $outOfStockProducts->count();
+        $lowStockCount = $lowStockProducts->count();
+        $bestSellerCount = $allProducts->where('is_best_seller', true)->count();
         $totalStockUnits = $allProducts->sum('stock');
+        $activeCouponsCount = $coupons->where('is_active', true)->count();
 
         // Biểu đồ Doanh thu 7 ngày gần nhất
         $revenueLast7Days = [];
@@ -239,8 +243,14 @@ class AdminController extends Controller
             $editingProduct = Product::find($editId);
         }
 
+        $orders = $filteredOrders->values();
+        $products = $filteredProducts->values();
+
         $stats = [
+            'total_products' => $allProducts->count(),
             'total_orders' => $totalOrdersCount,
+            'total_revenue' => $potentialRevenue,
+            'completed_revenue' => $realizedRevenue,
             'realized_revenue' => $realizedRevenue,
             'potential_revenue' => $potentialRevenue,
             'customers_count' => $customersCount,
@@ -248,17 +258,25 @@ class AdminController extends Controller
             'shipping_orders' => $shippingOrdersCount,
             'completed_orders' => $completedOrdersCount,
             'cancelled_orders' => $cancelledOrdersCount,
+            'best_seller_count' => $bestSellerCount,
             'out_of_stock_count' => $outOfStockCount,
             'low_stock_count' => $lowStockCount,
             'total_stock_units' => $totalStockUnits,
+            'active_coupons' => $activeCouponsCount,
             'revenue_chart' => $revenueLast7Days,
             'category_chart' => $categoryDistribution,
         ];
 
         return view('admin.index', compact(
             'activePage',
+            'allOrders',
+            'allProducts',
+            'orders',
+            'products',
             'filteredOrders',
             'filteredProducts',
+            'outOfStockProducts',
+            'lowStockProducts',
             'categories',
             'brands',
             'coupons',
