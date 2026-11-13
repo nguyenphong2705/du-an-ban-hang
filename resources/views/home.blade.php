@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng')
-@section('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')
+@section('title', 'SHINE Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng')
+@section('meta_description', 'SHINE Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng từ Pháp, Hàn Quốc và Nhật Bản. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')
 @section('canonical', route('home'))
 
 @section('content')
@@ -44,7 +44,7 @@
                 <!-- Right Column -->
                 <div class="lg:col-span-5 relative">
                     <div class="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-sage-200/80 border-8 border-white aspect-[4/5]">
-                        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1000&q=85" alt="Shine Beauty Skincare Collection" class="w-full h-full object-cover">
+                        <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1000&q=85" alt="SHINE Beauty Skincare Collection" class="w-full h-full object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-stone-900/50 via-transparent to-transparent flex items-end p-8">
                             <div class="bg-white/95 backdrop-blur-md p-5 rounded-2xl w-full shadow-lg">
                                 <span class="inline-flex items-center gap-1 bg-[#D4728C] text-white text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-2xs border border-[#C25E79]">✦ Best Seller Tuần Này</span>
@@ -110,7 +110,7 @@
             <span class="text-xs font-bold uppercase tracking-[0.2em] text-sage-500">Cá Nhân Hóa Chu Trình Dưỡng Da</span>
             <h2 class="font-serif text-3xl font-bold text-stone-800 mt-1">Chọn Mỹ Phẩm Theo Loại Da Của Bạn</h2>
             <p class="text-sm text-stone-500 mt-2">
-                Mỗi làn da có một nhu cầu riêng biệt. Hãy chọn tình trạng da để Shine Beauty gợi ý công thức hoạt chất phù hợp nhất.
+                Mỗi làn da có một nhu cầu riêng biệt. Hãy chọn tình trạng da để SHINE Beauty gợi ý công thức hoạt chất phù hợp nhất.
             </p>
         </div>
 

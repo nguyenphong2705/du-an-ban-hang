@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Quản Trị Viên Shop (Admin) | Shine Beauty</title>
+    <title>Trang Quản Trị Viên Shop (Admin) | SHINE Beauty</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -111,7 +111,7 @@
         <div class="w-full px-5 sm:px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <a href="{{ route('admin.index') }}" class="flex items-center gap-3">
-                    <img src="{{ asset('logo-footer.png') }}?v=3" alt="Shine Beauty Logo" width="48" height="48" class="w-12 h-12 object-contain drop-shadow-sm flex-shrink-0">
+                    <img src="{{ asset('logo-footer.png') }}?v=3" alt="SHINE Beauty Logo" width="48" height="48" class="w-12 h-12 object-contain drop-shadow-sm flex-shrink-0">
                     <div>
                         <span class="font-serif text-lg font-bold tracking-tight text-white">
                             Shine <span class="text-sage-400 font-normal italic">Admin</span>

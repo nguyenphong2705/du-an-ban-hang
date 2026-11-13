@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Thanh Toán & Đặt Hàng | Shine Beauty')
+@section('title', 'Thanh Toán & Đặt Hàng | SHINE Beauty')
 
 @section('content')
 @php
@@ -36,7 +36,7 @@
                 </div>
                 <span class="text-xs font-bold uppercase tracking-widest text-sage-500">Đặt Hàng Thành Công</span>
                 <h1 class="font-serif text-3xl font-bold text-stone-800">
-                    Cảm Ơn {{ $successOrder->customer_name }} Đã Mua Sắm Tại Shine Beauty!
+                    Cảm Ơn {{ $successOrder->customer_name }} Đã Mua Sắm Tại SHINE Beauty!
                 </h1>
                 <p class="text-sm text-stone-600 leading-relaxed">
                     Đơn hàng của bạn đã được lưu trực tiếp vào bảng <code>orders</code> trong cơ sở dữ liệu PostgreSQL qua Laravel Eloquent.

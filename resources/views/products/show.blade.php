@@ -9,9 +9,9 @@
     $seoDescription = \Illuminate\Support\Str::limit(strip_tags((string) $product->description), 155, '...');
 @endphp
 
-@section('title', $product->name . ' - Chính Hãng ' . ($product->brand->name ?? 'Shine Beauty') . ' | Shine Beauty')
-@section('meta_description', $seoDescription ?: ($product->name . ' chính hãng tại Shine Beauty. Dành cho ' . $product->skin_type . ', dung tích ' . $product->volume . '.'))
-@section('meta_keywords', implode(', ', array_filter([$product->name, $product->brand->name ?? '', $product->category->name ?? '', $product->skin_type, 'mỹ phẩm chính hãng', 'Shine Beauty'])))
+@section('title', $product->name . ' - Chính Hãng ' . ($product->brand->name ?? 'SHINE Beauty') . ' | SHINE Beauty')
+@section('meta_description', $seoDescription ?: ($product->name . ' chính hãng tại SHINE Beauty. Dành cho ' . $product->skin_type . ', dung tích ' . $product->volume . '.'))
+@section('meta_keywords', implode(', ', array_filter([$product->name, $product->brand->name ?? '', $product->category->name ?? '', $product->skin_type, 'mỹ phẩm chính hãng', 'SHINE Beauty'])))
 @section('canonical', route('products.show', $product->slug))
 @section('og_type', 'product')
 @section('og_image', $product->first_image)
@@ -53,7 +53,7 @@
             "description": "{{ addslashes($seoDescription) }}",
             "brand": {
                 "@@type": "Brand",
-                "name": "{{ $product->brand->name ?? 'Shine Beauty' }}"
+                "name": "{{ $product->brand->name ?? 'SHINE Beauty' }}"
             },
             "offers": {
                 "@@type": "Offer",

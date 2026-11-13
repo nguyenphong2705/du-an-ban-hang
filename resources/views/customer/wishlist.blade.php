@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Danh Mục Sản Phẩm Yêu Thích | Tài Khoản Khách Hàng Shine Beauty')
+@section('title', 'Danh Mục Sản Phẩm Yêu Thích | Tài Khoản Khách Hàng SHINE Beauty')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

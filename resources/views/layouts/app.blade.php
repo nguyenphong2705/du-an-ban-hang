@@ -6,10 +6,10 @@
          ===================================================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))</title>
-    <meta name="description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100% từ Pháp, Hàn Quốc, Nhật Bản. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
-    <meta name="keywords" content="@yield('meta_keywords', 'mỹ phẩm chính hãng, chăm sóc da, serum, kem dưỡng ẩm, chống nắng, trang điểm, nước hoa, Shine Beauty')">
-    <meta name="author" content="Shine Beauty Cosmetics">
+    <title>@yield('title', __('SHINE Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))</title>
+    <meta name="description" content="@yield('meta_description', 'SHINE Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100% từ Pháp, Hàn Quốc, Nhật Bản. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'mỹ phẩm chính hãng, chăm sóc da, serum, kem dưỡng ẩm, chống nắng, trang điểm, nước hoa, SHINE Beauty')">
+    <meta name="author" content="SHINE Beauty Cosmetics">
     <meta name="robots" content="@yield('meta_robots', 'index, follow, max-image-preview:large, max-snippet:-1')">
     <meta name="theme-color" content="#4A947A">
 
@@ -20,18 +20,18 @@
     <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
 
     <!-- Open Graph (Facebook / Zalo / Social Sharing) -->
-    <meta property="og:site_name" content="Shine Beauty Cosmetics">
+    <meta property="og:site_name" content="SHINE Beauty Cosmetics">
     <meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'vi_VN' }}">
     <meta property="og:type" content="@yield('og_type', 'website')">
-    <meta property="og:title" content="@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
-    <meta property="og:description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
+    <meta property="og:title" content="@yield('title', __('SHINE Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
+    <meta property="og:description" content="@yield('meta_description', 'SHINE Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%. Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
     <meta property="og:image" content="@yield('og_image', asset('logo.png'))">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('title', __('Shine Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
-    <meta name="twitter:description" content="@yield('meta_description', 'Shine Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%.')">
+    <meta name="twitter:title" content="@yield('title', __('SHINE Beauty | Mỹ Phẩm & Chăm Sóc Da Cao Cấp Chính Hãng'))">
+    <meta name="twitter:description" content="@yield('meta_description', 'SHINE Beauty — Hệ thống phân phối mỹ phẩm cao cấp & chăm sóc da chuẩn khoa học chính hãng 100%.')">
     <meta name="twitter:image" content="@yield('og_image', asset('logo.png'))">
 
     <!-- Favicon & Fonts -->
@@ -51,7 +51,7 @@
             {
                 "@@type": "Store",
                 "@@id": "{{ route('home') }}#organization",
-                "name": "Shine Beauty Cosmetics",
+                "name": "SHINE Beauty Cosmetics",
                 "url": "{{ route('home') }}",
                 "logo": "{{ asset('logo.png') }}",
                 "image": "{{ asset('logo.png') }}",
@@ -69,7 +69,7 @@
                 "@@type": "WebSite",
                 "@@id": "{{ route('home') }}#website",
                 "url": "{{ route('home') }}",
-                "name": "Shine Beauty",
+                "name": "SHINE Beauty",
                 "publisher": {
                     "@@id": "{{ route('home') }}#organization"
                 },
@@ -100,7 +100,7 @@
          3. THANH THÔNG BÁO ĐẦU TRANG (TOP ANNOUNCEMENT BAR)
          ===================================================================== -->
     <div class="bg-gradient-to-r from-sage-200/80 via-sage-100 to-sage-200/80 text-sage-900 text-xs py-2 px-4 text-center font-medium tracking-wide">
-        {{ __('✨ Shine Beauty — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
+        {{ __('✨ SHINE Beauty — Miễn phí vận chuyển toàn quốc cho đơn từ 500.000₫ — Cam kết 100% Mỹ phẩm Chính hãng ✨') }}
     </div>
 
     <!-- =====================================================================
@@ -112,11 +112,11 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <!-- Logo Thương Hiệu -->
-                <a href="{{ route('home') }}" class="flex items-center gap-3 group" aria-label="Shine Beauty - Trang chủ">
-                    <img src="{{ asset('logo-menu.svg') }}?v=1" alt="Shine Beauty Logo" width="64" height="64" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
+                <a href="{{ route('home') }}" class="flex items-center gap-3 group" aria-label="SHINE Beauty - Trang chủ">
+                    <img src="{{ asset('logo-menu.svg') }}?v=1" alt="SHINE Beauty Logo" width="64" height="64" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
                     <div>
                         <span class="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-stone-800">
-                            Shine <span class="text-sage-500 font-normal italic">Beauty</span>
+                            SHINE <span class="text-sage-500 font-normal italic">Beauty</span>
                         </span>
                         <p class="text-[10px] uppercase tracking-[0.2em] text-stone-400 -mt-1">
                             Luxury Cosmetics
@@ -350,10 +350,10 @@
                 <div class="bg-gradient-to-r from-sage-500 to-sage-600 px-6 py-5 text-white flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-12 h-12 rounded-2xl bg-white/95 p-1.5 shadow-sm flex items-center justify-center flex-shrink-0">
-                            <img src="{{ asset('logo.png') }}?v=3" alt="Shine Beauty Logo" width="40" height="40" class="w-10 h-10 object-contain">
+                            <img src="{{ asset('logo.png') }}?v=3" alt="SHINE Beauty Logo" width="40" height="40" class="w-10 h-10 object-contain">
                         </div>
                         <div>
-                            <span class="text-[10px] font-bold uppercase tracking-widest text-sage-100 block">Thành Viên Shine Beauty</span>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-sage-100 block">Thành Viên SHINE Beauty</span>
                             <h2 id="auth-modal-title" class="font-serif text-xl font-bold">
                                 {{ $initialAuthTab === 'register' ? 'Đăng Ký Tài Khoản Mới' : 'Đăng Nhập Khách Hàng' }}
                             </h2>
@@ -582,9 +582,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
-                    <img src="{{ asset('logo-footer.png') }}?v=1" alt="Shine Beauty Logo" class="w-14 h-14 object-contain drop-shadow-sm">
+                    <img src="{{ asset('logo-footer.png') }}?v=1" alt="SHINE Beauty Logo" class="w-14 h-14 object-contain drop-shadow-sm">
                     <span class="font-serif text-2xl font-bold text-white">
-                        Shine <span class="text-sage-400 italic font-normal">Beauty</span>
+                        SHINE <span class="text-sage-400 italic font-normal">Beauty</span>
                     </span>
                 </div>
                 <p class="text-xs text-stone-400 leading-relaxed">

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Quên Mật Khẩu & Khôi Phục Tài Khoản | Shine Beauty')
+@section('title', 'Quên Mật Khẩu & Khôi Phục Tài Khoản | SHINE Beauty')
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">

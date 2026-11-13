@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Danh Mục Mỹ Phẩm & Chăm Sóc Da Chính Hãng | Shine Beauty')
-@section('meta_description', 'Khám phá bộ sưu tập mỹ phẩm, serum, kem dưỡng ẩm, chống nắng, trang điểm và nước hoa chính hãng tại Shine Beauty. Lọc nhanh theo loại da, thương hiệu và khoảng giá.')
+@section('title', 'Danh Mục Mỹ Phẩm & Chăm Sóc Da Chính Hãng | SHINE Beauty')
+@section('meta_description', 'Khám phá bộ sưu tập mỹ phẩm, serum, kem dưỡng ẩm, chống nắng, trang điểm và nước hoa chính hãng tại SHINE Beauty. Lọc nhanh theo loại da, thương hiệu và khoảng giá.')
 @section('canonical', route('products.index'))
 
 @section('content')

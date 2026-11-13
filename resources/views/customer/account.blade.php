@@ -3,16 +3,16 @@
 @php
     $currentTab = $activeSection ?? 'overview';
     $pageTitles = [
-        'overview'  => 'Tổng Quan Tài Khoản Khách Hàng | Shine Beauty',
-        'profile'   => 'Đổi Thông Tin Cá Nhân & Xác Thực Email | Shine Beauty',
-        'addresses' => 'Sổ Địa Chỉ Nhận Hàng Mặc Định | Shine Beauty',
-        'cart'      => 'Giỏ Hàng Đã Lưu Của Tôi | Shine Beauty',
-        'orders'    => 'Lịch Sử Đơn Hàng Đã Đặt | Shine Beauty',
-        'vouchers'  => 'Kho Mã Giảm Giá & Voucher Ưu Đãi | Shine Beauty',
+        'overview'  => 'Tổng Quan Tài Khoản Khách Hàng | SHINE Beauty',
+        'profile'   => 'Đổi Thông Tin Cá Nhân & Xác Thực Email | SHINE Beauty',
+        'addresses' => 'Sổ Địa Chỉ Nhận Hàng Mặc Định | SHINE Beauty',
+        'cart'      => 'Giỏ Hàng Đã Lưu Của Tôi | SHINE Beauty',
+        'orders'    => 'Lịch Sử Đơn Hàng Đã Đặt | SHINE Beauty',
+        'vouchers'  => 'Kho Mã Giảm Giá & Voucher Ưu Đãi | SHINE Beauty',
     ];
 @endphp
 
-@section('title', $pageTitles[$currentTab] ?? 'Trung Tâm Tài Khoản Khách Hàng | Shine Beauty')
+@section('title', $pageTitles[$currentTab] ?? 'Trung Tâm Tài Khoản Khách Hàng | SHINE Beauty')
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')

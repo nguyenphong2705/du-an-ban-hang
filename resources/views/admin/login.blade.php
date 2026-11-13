@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập Quản Trị Viên Shop | Shine Beauty Admin</title>
+    <title>Đăng Nhập Quản Trị Viên Shop | SHINE Beauty Admin</title>
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,7 +64,7 @@
         <!-- Brand Header -->
         <div class="text-center space-y-2">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-3 group">
-                <img src="{{ asset('logo-footer.png') }}?v=3" alt="Shine Beauty Logo" width="64" height="64" class="w-16 h-16 object-contain drop-shadow-md flex-shrink-0">
+                <img src="{{ asset('logo-footer.png') }}?v=3" alt="SHINE Beauty Logo" width="64" height="64" class="w-16 h-16 object-contain drop-shadow-md flex-shrink-0">
                 <div class="text-left">
                     <span class="font-serif text-2xl font-bold tracking-tight text-white">
                         Shine <span class="text-sage-400 font-normal italic">Admin</span>

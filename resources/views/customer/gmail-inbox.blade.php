@@ -34,7 +34,7 @@
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-            <span>from:Shine Beauty to:{{ $email }}</span>
+            <span>from:SHINE Beauty to:{{ $email }}</span>
         </div>
 
         <!-- Thông tin tài khoản Gmail đang mở -->
@@ -85,7 +85,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-2.5">
                             <h1 class="text-lg sm:text-xl font-normal text-gray-900">
-                                [Shine Beauty] Mã xác thực Email của bạn: <strong class="font-mono">{{ $otpSession['code'] }}</strong>
+                                [SHINE Beauty] Mã xác thực Email của bạn: <strong class="font-mono">{{ $otpSession['code'] }}</strong>
                             </h1>
                             <span class="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Hộp thư đến</span>
                         </div>
@@ -102,7 +102,7 @@
                             </div>
                             <div>
                                 <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="font-bold text-sm text-gray-900">Shine Beauty Cosmetics</span>
+                                    <span class="font-bold text-sm text-gray-900">SHINE Beauty Cosmetics</span>
                                     <span class="text-xs text-gray-500">&lt;no-reply@shinebeauty.vn&gt;</span>
                                 </div>
                                 <p class="text-xs text-gray-500">
@@ -125,7 +125,7 @@
                     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #FAF9F6; padding: 32px 24px; border-radius: 20px; border: 1px solid #E2ECE7; color: #292524;">
                         <div style="text-align: center; margin-bottom: 24px;">
                             <span style="display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #6B8E7B; background: #E8F2EC; padding: 6px 14px; border-radius: 999px;">
-                                Shine Beauty • Xác Thực Tài Khoản
+                                SHINE Beauty • Xác Thực Tài Khoản
                             </span>
                             <h2 style="margin: 12px 0 4px; font-size: 22px; color: #1C1917;">Mã Xác Thực Địa Chỉ Email</h2>
                             <p style="margin: 0; font-size: 13px; color: #78716C;">Gửi tới hộp thư Gmail: <strong>{{ $email }}</strong></p>
@@ -134,7 +134,7 @@
                         <div style="background-color: #FFFFFF; border-radius: 16px; padding: 24px; border: 1px solid #E7E5E4; text-align: center;">
                             <p style="margin: 0 0 14px; font-size: 14px; color: #44403C; line-height: 1.6;">
                                 Xin chào <strong>{{ $user->name }}</strong>,<br>
-                                Bạn vừa yêu cầu xác thực địa chỉ Email cho tài khoản khách hàng tại <strong>Shine Beauty</strong>. Đây là mã xác nhận 6 chữ số của bạn:
+                                Bạn vừa yêu cầu xác thực địa chỉ Email cho tài khoản khách hàng tại <strong>SHINE Beauty</strong>. Đây là mã xác nhận 6 chữ số của bạn:
                             </p>
 
                             <div style="margin: 20px auto; display: inline-block; background-color: #FDF5F2; border: 2px dashed #C85A32; border-radius: 14px; padding: 14px 32px;">
@@ -158,7 +158,7 @@
                         </div>
 
                         <p style="margin: 20px 0 0; text-align: center; font-size: 12px; color: #A8A29E;">
-                            © Shine Beauty Cosmetics — Chăm sóc làn da Việt chính hãng.
+                            © SHINE Beauty Cosmetics — Chăm sóc làn da Việt chính hãng.
                         </p>
                     </div>
                 </div>
