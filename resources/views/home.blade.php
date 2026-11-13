@@ -92,7 +92,7 @@
                     <h2 class="font-serif text-3xl font-bold text-stone-800 mt-1">Sản Phẩm Bán Chạy (Best Sellers)</h2>
                 </div>
                 <a href="{{ route('products.index') }}" class="text-sm font-semibold text-sage-600 hover:text-sage-700 mt-2 sm:mt-0">
-                    Xem toàn bộ {{ $allProducts->count() }} sản phẩm →
+                    Xem toàn bộ {{ $totalProductsCount ?? 0 }} sản phẩm →
                 </a>
             </div>
 

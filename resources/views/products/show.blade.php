@@ -204,11 +204,11 @@
                     <input type="number" id="quantity" name="quantity" value="1" min="1" max="20" class="w-14 text-center font-bold text-sm text-stone-800 focus:outline-none">
                 </div>
 
-                <button type="submit" class="flex-1 min-w-[160px] bg-white hover:bg-sage-50 text-sage-600 border-2 border-sage-500 font-semibold py-3.5 px-5 rounded-full transition text-sm cursor-pointer">
-                    + Thêm Vào Giỏ Hàng
+                <button type="submit" class="flex-1 min-w-[150px] inline-flex items-center justify-center whitespace-nowrap bg-white hover:bg-sage-50 text-sage-600 border-2 border-sage-500 font-semibold py-3.5 px-5 rounded-full transition text-sm cursor-pointer">
+                    + Thêm Vào Giỏ
                 </button>
 
-                <button type="submit" name="buy_now" value="1" class="flex-1 min-w-[160px] bg-sage-500 hover:bg-sage-600 text-white font-semibold py-3.5 px-5 rounded-full shadow-lg shadow-sage-200 transition text-sm cursor-pointer">
+                <button type="submit" name="buy_now" value="1" class="flex-1 min-w-[150px] inline-flex items-center justify-center whitespace-nowrap bg-sage-500 hover:bg-sage-600 text-white border-2 border-sage-500 hover:border-sage-600 font-semibold py-3.5 px-5 rounded-full shadow-lg shadow-sage-200 transition text-sm cursor-pointer">
                     Mua Ngay →
                 </button>
 

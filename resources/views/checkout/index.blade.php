@@ -209,16 +209,49 @@
                     </div>
 
                     @if(isset($savedAddresses) && $savedAddresses->isNotEmpty())
-                        <div class="p-4 rounded-2xl bg-sage-50/70 border border-sage-200 space-y-2.5 text-xs">
-                            <div class="flex items-center justify-between">
+                        @php
+                            $activeSavedAddress = $defaultAddress ?? $savedAddresses->first();
+                            $hasMultipleAddresses = $savedAddresses->count() > 1;
+                        @endphp
+                        <div class="p-4 rounded-2xl bg-sage-50/70 border border-sage-200 space-y-3 text-xs">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-bold text-sage-800 uppercase tracking-wider text-[11px]">
-                                    📍 Chọn Nhanh Địa Chỉ Đã Lưu (Không Cần Nhập Lại)
+                                    📍 {{ $hasMultipleAddresses ? 'Địa Chỉ Giao Hàng Đã Lưu' : 'Chọn Nhanh Địa Chỉ Đã Lưu (Không Cần Nhập Lại)' }}
                                 </span>
-                                <a href="{{ route('customer.addresses') }}" class="text-[11px] font-bold text-terracotta-600 hover:underline">
-                                    + Thêm / Đặt địa chỉ mặc định
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    @if($hasMultipleAddresses)
+                                        <button type="button"
+                                            id="toggle-address-list-btn"
+                                            onclick="toggleSavedAddressList()"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-sage-600 hover:bg-sage-700 text-white font-bold text-[11px] shadow-2xs transition cursor-pointer">
+                                            🔄 Thay đổi địa chỉ ({{ $savedAddresses->count() }})
+                                        </button>
+                                    @endif
+                                    <a href="{{ route('customer.addresses') }}" class="text-[11px] font-bold text-terracotta-600 hover:underline">
+                                        + Thêm / Đặt địa chỉ mặc định
+                                    </a>
+                                </div>
                             </div>
-                            <div class="grid grid-cols-1 gap-2">
+
+                            @if($hasMultipleAddresses && $activeSavedAddress)
+                                <div id="active-saved-address-summary" class="p-3 rounded-xl border-2 border-sage-500 bg-white shadow-2xs flex items-center justify-between gap-3">
+                                    <div class="space-y-0.5 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <span id="active-addr-label" class="font-bold text-stone-800">🏷️ {{ $activeSavedAddress->label }}</span>
+                                            <span id="active-addr-default-badge" class="{{ $activeSavedAddress->is_default ? '' : 'hidden' }} text-[10px] font-bold bg-sage-600 text-white px-2 py-0.5 rounded-full">★ Mặc định</span>
+                                            <span id="active-addr-recipient" class="text-stone-600 font-medium">
+                                                • {{ $activeSavedAddress->recipient_name ?: auth()->user()->name }} ({{ $activeSavedAddress->recipient_phone ?: auth()->user()->phone }})
+                                            </span>
+                                        </div>
+                                        <p id="active-addr-full" class="text-[11px] text-stone-600 truncate">
+                                            {{ $activeSavedAddress->address }}
+                                        </p>
+                                    </div>
+                                    <span class="text-[11px] font-bold text-sage-600 flex-shrink-0">✓ Đang chọn</span>
+                                </div>
+                            @endif
+
+                            <div id="saved-address-list" class="grid grid-cols-1 gap-2 {{ $hasMultipleAddresses ? 'hidden pt-1 border-t border-sage-200/70' : '' }}">
                                 @foreach($savedAddresses as $sAddr)
                                     <div data-saved-addr-card="{{ $sAddr->id }}"
                                         onclick='applySavedCustomerAddress(@json($sAddr), this)'
@@ -1337,6 +1370,19 @@
             updateDynamicQrCodes();
         };
 
+        window.toggleSavedAddressList = function (forceOpen) {
+            const listEl = document.getElementById('saved-address-list');
+            const btnEl = document.getElementById('toggle-address-list-btn');
+            if (!listEl) return;
+
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : listEl.classList.contains('hidden');
+            listEl.classList.toggle('hidden', !shouldOpen);
+            if (btnEl) {
+                const count = document.querySelectorAll('[data-saved-addr-card]').length;
+                btnEl.textContent = shouldOpen ? '✕ Đóng danh sách' : `🔄 Thay đổi địa chỉ (${count})`;
+            }
+        };
+
         window.applySavedCustomerAddress = function (addrObj, cardEl) {
             if (!addrObj) return;
 
@@ -1368,11 +1414,28 @@
                 addressPreviewText.textContent = addrObj.address;
             }
 
+            const activeLabel = document.getElementById('active-addr-label');
+            const activeDefaultBadge = document.getElementById('active-addr-default-badge');
+            const activeRecipient = document.getElementById('active-addr-recipient');
+            const activeFull = document.getElementById('active-addr-full');
+            if (activeLabel) activeLabel.textContent = `🏷️ ${addrObj.label || 'Địa chỉ'}`;
+            if (activeDefaultBadge) activeDefaultBadge.classList.toggle('hidden', !addrObj.is_default);
+            if (activeRecipient) {
+                const rName = addrObj.recipient_name || (nameEl ? nameEl.value : '');
+                const rPhone = addrObj.recipient_phone || (phoneInput ? phoneInput.value : '');
+                activeRecipient.textContent = `• ${rName} (${rPhone})`;
+            }
+            if (activeFull && addrObj.address) activeFull.textContent = addrObj.address;
+
             document.querySelectorAll('[data-saved-addr-card]').forEach(el => {
                 el.className = 'p-3 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 border-sage-100 bg-white/70 hover:bg-white hover:border-sage-300';
             });
             if (cardEl) {
                 cardEl.className = 'p-3 rounded-xl border-2 transition cursor-pointer flex items-center justify-between gap-3 border-sage-500 bg-white shadow-2xs';
+            }
+
+            if (document.getElementById('active-saved-address-summary')) {
+                window.toggleSavedAddressList(false);
             }
 
             panMapToSelectedProvince(matchedProv);

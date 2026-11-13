@@ -846,7 +846,7 @@
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <button type="submit" class="text-xs font-semibold bg-stone-900 hover:bg-sage-500 text-white px-3.5 py-1.5 rounded-full transition">
-                                + Thêm giỏ
+                                + Thêm Vào Giỏ
                             </button>
                         </form>
                     </div>

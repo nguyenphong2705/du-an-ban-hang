@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
@@ -34,13 +35,13 @@ class HomeController extends Controller
         $categories = Category::withCount('products')->get();
         $brands = Brand::withCount('products')->get();
 
-        // 2. Lấy toàn bộ sản phẩm mới nhất kèm quan hệ danh mục và thương hiệu
-        $allProducts = Product::with(['category', 'brand'])
+        // 2. Lấy tổng số sản phẩm và top 6 sản phẩm bán chạy nhất (Best Sellers)
+        $totalProductsCount = Cache::remember('home.total_products_count', 300, fn () => Product::count());
+        $bestSellers = Product::with(['category', 'brand'])
+            ->where('is_best_seller', true)
             ->latest()
+            ->take(6)
             ->get();
-
-        // 3. Lọc danh sách top 6 sản phẩm bán chạy (Best Sellers)
-        $bestSellers = $allProducts->where('is_best_seller', true)->take(6);
 
         // 4. Xử lý bộ lọc sản phẩm theo loại da (Skin Explorer)
         $selectedSkin = $request->query('skin_type', 'Tất cả');
@@ -64,7 +65,7 @@ class HomeController extends Controller
             'categories',
             'brands',
             'bestSellers',
-            'allProducts',
+            'totalProductsCount',
             'skinProducts',
             'selectedSkin'
         ));

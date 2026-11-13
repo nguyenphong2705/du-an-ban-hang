@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Wishlist;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,8 +24,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         try {
-            \App\Models\User::ensureCustomerFeaturesSchema();
-            \App\Models\Product::ensureUnder500kProductsSeeded();
+            if (! Cache::get('app.boot_schema_checked_v1')) {
+                \App\Models\User::ensureCustomerFeaturesSchema();
+                \App\Models\Product::ensureUnder500kProductsSeeded();
+                Cache::put('app.boot_schema_checked_v1', true, now()->addHours(12));
+            }
         } catch (\Throwable) {
             // Bỏ qua nếu bảng chưa được migrate
         }

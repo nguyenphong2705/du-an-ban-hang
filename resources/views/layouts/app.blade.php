@@ -36,7 +36,7 @@
 
     <!-- Favicon & Fonts -->
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
@@ -83,76 +83,6 @@
     }
     </script>
     @stack('structured_data')
-    <script>
-        const sageMintPalette = {
-            50: '#F2F9F6',
-            100: '#DFF2EA',
-            200: '#BFE4D5',
-            300: '#94CEB8',
-            400: '#68B398',
-            500: '#4A947A',
-            600: '#397A63',
-            700: '#2F6250',
-            800: '#274F42',
-            900: '#214237',
-            950: '#11251E',
-        };
-        const terracottaPalette = {
-            50: '#FDF5F2',
-            100: '#FBE8E1',
-            200: '#F6D0C2',
-            300: '#EEB09A',
-            400: '#E28768',
-            500: '#D46542',
-            600: '#C04E2C',
-            700: '#9E3E22',
-            800: '#82341F',
-            900: '#6B2D1D',
-            950: '#3A150C',
-        };
-        const dustyPinkPalette = {
-            50: '#FDF4F6',
-            100: '#FAE8EC',
-            200: '#F5D2DA',
-            300: '#ECAFBE',
-            400: '#DF8A9F',
-            500: '#D4728C',
-            600: '#BF5874',
-            700: '#A1445E',
-            800: '#863A50',
-            900: '#723446',
-            950: '#401924',
-        };
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Roboto', 'sans-serif'],
-                        serif: ['Roboto', 'sans-serif'],
-                    },
-                    colors: {
-                        sage: sageMintPalette,
-                        rose: sageMintPalette,
-                        dustypink: dustyPinkPalette,
-                        mint: {
-                            50: '#F0FDF7',
-                            100: '#DCFCEB',
-                            200: '#BBF7D8',
-                            300: '#86EFBA',
-                            400: '#4ADE96',
-                            500: '#2AB876',
-                            600: '#1D965E',
-                            700: '#19774C',
-                            800: '#185E3F',
-                            900: '#154E35',
-                        },
-                        terracotta: terracottaPalette,
-                        wine: terracottaPalette
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         body, h1, h2, h3, h4, h5, h6, input, button, select, textarea {
             font-family: 'Roboto', sans-serif;
@@ -183,7 +113,7 @@
             <div class="flex items-center justify-between h-20">
                 <!-- Logo Thương Hiệu -->
                 <a href="{{ route('home') }}" class="flex items-center gap-3 group" aria-label="Shine Beauty - Trang chủ">
-                    <img src="{{ asset('logo.png') }}?v=2" alt="Shine Beauty Logo" width="64" height="64" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
+                    <img src="{{ asset('logo-menu.svg') }}?v=1" alt="Shine Beauty Logo" width="64" height="64" class="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-xs group-hover:scale-105 transition">
                     <div>
                         <span class="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-stone-800">
                             Shine <span class="text-sage-500 font-normal italic">Beauty</span>
@@ -572,7 +502,7 @@
                             </div>
 
                             <div class="space-y-3.5 pt-3">
-                                <button type="submit" form="auth-form-register" class="w-full bg-stone-900 hover:bg-sage-600 text-white font-semibold py-3.5 rounded-2xl shadow-md transition text-sm cursor-pointer">
+                                <button type="submit" form="auth-form-register" class="w-full bg-sage-500 hover:bg-sage-600 text-white font-semibold py-3.5 rounded-2xl shadow-md shadow-sage-200 transition text-sm cursor-pointer">
                                     Tạo Tài Khoản Khách Hàng Mới →
                                 </button>
 

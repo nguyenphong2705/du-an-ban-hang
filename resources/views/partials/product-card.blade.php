@@ -23,13 +23,12 @@
                         ✦ Best Seller
                     </span>
                 @endif
+                @if($discountPercent)
+                    <span class="inline-block bg-terracotta-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit shadow-xs border border-terracotta-500">
+                        -{{ $discountPercent }}%
+                    </span>
+                @endif
             </div>
-
-            @if($discountPercent)
-                <span class="absolute top-3 right-3 inline-block bg-terracotta-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full w-fit shadow-xs border border-terracotta-500 pointer-events-none">
-                    -{{ $discountPercent }}%
-                </span>
-            @endif
 
             <span class="absolute bottom-3 left-3 bg-white/90 text-sage-700 text-[11px] font-medium px-3 py-1 rounded-full border border-sage-100 shadow-2xs pointer-events-none">
                 {{ $product->skin_type }}
@@ -41,7 +40,7 @@
                 data-favorited="{{ $isFavorited ? '1' : '0' }}"
                 onclick="toggleWishlistProduct({{ $product->id }}, this)"
                 title="{{ $isFavorited ? 'Bỏ yêu thích sản phẩm này' : 'Thêm vào danh mục Yêu Thích' }}"
-                class="absolute bottom-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer {{ $isFavorited ? 'opacity-100 bg-red-50 text-red-500 border-red-300 shadow-md shadow-red-200/80 ring-2 ring-red-400/50 scale-105' : 'opacity-40 hover:opacity-95 bg-white/80 text-stone-400 hover:text-red-500 border-stone-200/80' }}">
+                class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer {{ $isFavorited ? 'opacity-100 bg-red-50 text-red-500 border-red-300 shadow-md shadow-red-200/80 ring-2 ring-red-400/50 scale-105' : 'opacity-40 hover:opacity-95 bg-white/80 text-stone-400 hover:text-red-500 border-stone-200/80' }}">
                 <svg class="w-5 h-5 transition-transform duration-200" viewBox="0 0 24 24" fill="{{ $isFavorited ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
@@ -93,7 +92,7 @@
             <input type="hidden" name="product_id" value="{{ $product->id }}">
             <input type="hidden" name="quantity" value="1">
             <button type="submit" class="inline-flex items-center gap-1.5 bg-sage-50 hover:bg-sage-500 text-sage-700 hover:text-white font-medium text-xs px-3.5 py-2.5 rounded-full transition-colors duration-200 border border-sage-200/70">
-                <span>+ Thêm giỏ</span>
+                <span>+ Thêm Vào Giỏ</span>
             </button>
         </form>
     </div>

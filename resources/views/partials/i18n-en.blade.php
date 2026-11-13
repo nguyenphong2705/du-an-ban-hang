@@ -77,7 +77,7 @@
         'Chúng tôi cam kết cung cấp sản phẩm chính hãng 100%, đi kèm tem phụ tiếng Việt theo đúng quy định.': 'We guarantee 100% authentic products, complete with official Vietnamese sub-labels in full compliance with regulations.',
 
         // Product Cards & Product Pages
-        '+ Thêm giỏ': '+ Add to Cart',
+        '+ Thêm Vào Giỏ': '+ Add to Cart',
         '+ Thêm Vào Giỏ Hàng': '+ Add to Cart',
         'Mua Ngay →': 'Buy Now →',
         'Bộ Sưu Tập Chính Hãng': 'Authentic Collection',
